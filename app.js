@@ -1,5 +1,6 @@
 const express = require("express");
 const morgan = require("morgan");
+const cors = require('cors')
 const bodyParser = require("body-parser");
 const createError = require("http-errors");
 const xssClean = require("xss-clean");
@@ -22,6 +23,7 @@ const app = express();
 
 app.use(cookieParser());
 app.use(limiter);
+app.use(cors())
 app.use(xssClean());
 app.use(morgan("dev"));
 app.use(bodyParser.json());
@@ -31,6 +33,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/api", authRouter);
 app.use("/api/seed", seedRouter);
 app.use("/api", userRouter);
+
+
+app.get("/", (req, res) => {
+  return res.status(201).json({success: true, message:"welcome to the server"});
+});
 
 //client error handling
 

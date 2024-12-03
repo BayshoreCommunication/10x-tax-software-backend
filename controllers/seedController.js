@@ -3,11 +3,11 @@ const User = require("../models/userModel");
 
 const seedUser = async (req, res, next) => {
   try {
-    // await User.deleteMany({});
+    await User.deleteMany({});
 
-    // const users = await User.insertMany(data);
+    const users = await User.insertMany(data);
 
-    return res.status(201).json(data);
+    return res.status(201).json(users);
   } catch (error) {
     next(error);
   }
