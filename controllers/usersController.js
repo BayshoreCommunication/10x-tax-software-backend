@@ -166,44 +166,58 @@ const processRegister = async (req, res, next) => {
   try {
     const { businessName, email, phone, password } = req.body;
 
-    const user = await User.findOne({ email });
-    const { otp, otpExpiration } = generateOtpAndExpiration();
+    // Check if the user already exists
+    let user = await User.findOne({ email });
 
     if (user) {
       if (!user.isActive) {
+        // Resend OTP for inactive users
+        const { otp, otpExpiration } = generateOtpAndExpiration();
+        user.otp = otp;
+        user.otpExpiration = otpExpiration;
+        user.businessName = businessName;
+        user.password = password;
+        user.phone = phone;
+
+        await user.save();
         await sendVerificationEmail(email, otp, user.businessName);
+
         return successResponse(res, {
           statusCode: 200,
           message: `Please check your email (${email}) to activate your account.`,
         });
-      } else {
-        return successResponse(res, {
-          statusCode: 409,
-          message: "User already registered and active.",
-        });
       }
-    } else {
-      const newUser = new User({
-        businessName,
-        email,
-        phone,
-        password,
-        otp,
-        otpExpiration,
-      });
-
-      await newUser.save();
-      await sendVerificationEmail(email, otp, businessName);
 
       return successResponse(res, {
-        statusCode: 200,
-        message: `Please check your email (${email}) to activate your account.`,
+        statusCode: 409,
+        message: "User already registered and active.",
       });
     }
+
+    // Register a new user
+    const { otp, otpExpiration } = generateOtpAndExpiration();
+    const newUser = new User({
+      businessName,
+      email,
+      phone,
+      password,
+      otp,
+      otpExpiration,
+      isActive: false,
+    });
+
+    await newUser.save();
+    await sendVerificationEmail(email, otp, businessName);
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: `Please check your email (${email}) to activate your account.`,
+    });
   } catch (error) {
-    next(error); 
+    next(error);
   }
 };
+
 
 // Active user
 
@@ -212,25 +226,27 @@ const activateUserAccount = async (req, res, next) => {
     const { otp, email } = req.body;
 
     if (!email || !otp) {
-      throw createError(400, "Email and OTP are required.");
+      return next(createError(400, "Email and OTP are required."));
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      throw createError(404, "User does not exist.");
+      return next(createError(404, "User does not exist."));
     }
 
+    // Validate OTP and its expiration
     if (user.otp !== otp) {
-      throw createError(400, "Invalid OTP.");
+      return next(createError(400, "Invalid OTP."));
     }
 
     if (user.otpExpiration < Date.now()) {
-      throw createError(400, "OTP has expired.");
+      return next(createError(400, "OTP has expired."));
     }
 
-    user.otp = null; 
-    user.otpExpiration = null; 
-    user.isActive = true; 
+    // Activate user account
+    user.otp = null;
+    user.otpExpiration = null;
+    user.isActive = true;
 
     await user.save();
 
@@ -238,11 +254,11 @@ const activateUserAccount = async (req, res, next) => {
       statusCode: 200,
       message: "User account activated successfully.",
     });
-
   } catch (error) {
     next(error);
   }
 };
+
 
 
 

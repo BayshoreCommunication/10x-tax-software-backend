@@ -11,6 +11,9 @@ const userLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
+    console.log("check username: " , email, password);
+    
+
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -108,7 +111,7 @@ const userLoginOtpVerify = async (req, res, next) => {
     user.otpExpiration = null;
     await user.save();
 
-    const accessToken = await createJsonWebToken({ userId: user._id }, jwtSecretKey, {
+    const accessToken = await createJsonWebToken({user}, jwtSecretKey, {
       expiresIn: "30d",
     });
 

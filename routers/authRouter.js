@@ -4,8 +4,8 @@ const authRouter = express.Router();
 // const runValidation = require("../validator");
 const { userLogin, userLogout, userTokenRefresh, userLoginOtpVerify } = require("../controllers/authController");
 
-authRouter.get("/user/login", userLogin);
-authRouter.get("/user/login-otp-verify", userLoginOtpVerify);
+authRouter.post("/user/login", userLogin);
+authRouter.post("/user/login-otp-verify", userLoginOtpVerify);
 authRouter.get("/user/logout", userLogout);
 
 authRouter.get("/refresh-token", userTokenRefresh);

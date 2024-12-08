@@ -16,8 +16,8 @@ const { validateUserRegistration, validateUserPassword, validateUserForgatPasswo
 const runValidation = require("../validator");
 const { isLoggedIn, isAdmin } = require("../middleware/auth");
 
-userRouter.get("/users", isLoggedIn, isAdmin, getAllUsers);
-userRouter.get("/user/:id", getUserById);
+userRouter.get("/users", isLoggedIn,  getAllUsers);
+userRouter.get("/user/:id", isLoggedIn, getUserById);
 userRouter.post(
   "/user/register",
   // validateUserRegistration,
@@ -25,8 +25,8 @@ userRouter.post(
   processRegister
 );
 userRouter.post("/user/verify", activateUserAccount);
-userRouter.delete("/user/:id", deleteUserById);
-userRouter.put("/user/:id", updateUserById);
+userRouter.delete("/user/:id", isLoggedIn, deleteUserById);
+userRouter.put("/user/:id", isLoggedIn, updateUserById);
 userRouter.put("/password-update", isLoggedIn, validateUserPassword, runValidation, updateUserPassword);
 
 userRouter.post("/forget-password", isLoggedIn, validateUserForgatPassword, runValidation,forgetPassword);

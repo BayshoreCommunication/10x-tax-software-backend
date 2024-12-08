@@ -16,8 +16,12 @@ const isLoggedIn = async (req, res, next) => {
       throw createError(401, "Your token is invalid");
     }
 
-    req.user = decoded.user;
 
+    if (!decoded?.user?.isActive) {
+      throw createError(401, "User is not active");
+    }
+
+    req.user = decoded.user;
 
     next();
   } catch (error) {
@@ -40,6 +44,11 @@ const isAdmin = async (req, res, next) => {
         "Forbidden! You must be an admin to access this resource"
       );
     }
+
+    if (!user.isActive) {
+      throw createError(401, "Admin is not active");
+    }
+
     next();
   } catch (error) {
     next(error);
