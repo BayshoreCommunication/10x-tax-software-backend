@@ -1,18 +1,80 @@
 const { Schema, model } = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+// const userSchema = new Schema(
+//   {
+//     name: {
+//       type: String,
+//       required: [true, "User name is required"],
+//       trim: true,
+//     },
+
+//     email: {
+//       type: String,
+//       required: [true, "User email is required"],
+//       trim: true,
+//       unique: true,
+//       lowercase: true,
+//       validate: {
+//         validator: function (value) {
+//           return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(value);
+//         },
+//         message: "Please enter a valid email address",
+//       },
+//     },
+
+//     password: {
+//       type: String,
+//       required: [true, "User password is required"],
+//       trim: true,
+//       minlength: [
+//         8,
+//         "The length of the user password must be at least 8 characters",
+//       ],
+//       set: function (value) {
+//         return bcrypt.hashSync(value, bcrypt.genSaltSync(10));
+//       },
+//     },
+
+//     image: {
+//       type: String,
+//     },
+
+//     address: {
+//       type: String,
+//       required: [true, "User address is required"],
+//     },
+
+//     phone: {
+//       type: String,
+//       required: [true, "User phone is required"],
+//     },
+
+//     isAdmin: {
+//       type: Boolean,
+//       default: false,
+//     },
+
+//     isBanned: {
+//       type: Boolean,
+//       default: false,
+//     },
+//   },
+//   { timestamps: true }
+// );
+
+
 const userSchema = new Schema(
   {
-    name: {
+    businessName: {
       type: String,
-      required: [true, "User name is required"],
+      required: [true, "Business name is required"],
       trim: true,
     },
 
     email: {
       type: String,
-      required: [true, "User email is required"],
-      trim: true,
+      required: [true, "Business email is required"],
       unique: true,
       lowercase: true,
       validate: {
@@ -25,29 +87,89 @@ const userSchema = new Schema(
 
     password: {
       type: String,
-      required: [true, "User password is required"],
-      trim: true,
+      required: [true, "Password is required"],
       minlength: [
         8,
-        "The length of the user password must be at least 8 characters",
+        "The length of the password must be at least 8 characters",
       ],
       set: function (value) {
         return bcrypt.hashSync(value, bcrypt.genSaltSync(10));
       },
     },
 
-    image: {
+    phone: {
       type: String,
+      required: [true, "Phone number is required"],
+      validate: {
+        validator: function (value) {
+          return /^[0-9]+$/.test(value);
+        },
+        message: "Phone number should only contain digits",
+      },
     },
 
     address: {
       type: String,
-      required: [true, "User address is required"],
+      // required: [true, "Address is required"],
+      trim: true,
     },
 
-    phone: {
+    website: {
       type: String,
-      required: [true, "User phone is required"],
+      trim: true,
+      validate: {
+        validator: function (value) {
+          return /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w.-]*)*\/?$/.test(
+            value
+          );
+        },
+        message: "Please enter a valid URL",
+      },
+    },
+
+    businessWebsite: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: function (value) {
+          return /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w.-]*)*\/?$/.test(
+            value
+          );
+        },
+        message: "Please enter a valid URL",
+      },
+    },
+
+    brandColor: {
+      type: String,
+      trim: true,
+    },
+
+    logoUrl: {
+      type: String,
+      trim: true,
+    },
+
+    registerDate: {
+      type: Date,
+    },
+
+    currentSubscription: {
+      type: String,
+      enum: ["paid", "free"], 
+    },
+
+    currentSubscriptionPayDate: {
+      type: Date,
+    },
+
+    currentSubscriptionExpiredDate: {
+      type: Date,
+    },
+
+    currentSubscriptionType: {
+      type: String,
+      enum: ["monthly", "yearly"], 
     },
 
     isAdmin: {
@@ -59,10 +181,17 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
+
+    otp: { type: String }, 
+    otpExpiration: { type: Date }, 
+    isActive : {type: Boolean, default: false}
+
   },
   { timestamps: true }
 );
 
-const User = model("Users", userSchema);
+const User = model("User", userSchema);
 
 module.exports = User;
+
+

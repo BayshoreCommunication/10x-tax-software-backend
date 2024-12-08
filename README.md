@@ -1,2 +1,3 @@
-# eCommerce Project
-# node-express-starter-project
+hazel-ecommerce-backend
+
+

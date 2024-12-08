@@ -12,6 +12,49 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 
+
+const generateOtpAndExpiration = () => {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpExpiration = Date.now() + 10 * 60 * 1000; // OTP expires in 10 minutes
+  return { otp, otpExpiration };
+};
+
+// Helper function to send verification email
+const sendVerificationEmail = async (email, otp, businessName) => {
+  const emailData = {
+    email,
+    subject: "10xTax Sign-up Verification",
+    html: `
+      <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 15px;">
+        <div style="max-width: 600px; margin: 30px auto; background: #ffffff; border: 1px solid #dddddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); overflow: hidden;">
+          <div style="background-color: #000000; color: white; text-align: center; padding: 20px;">
+            <h1 style="margin: 0; font-size: 24px;">Verify your email</h1>
+          </div>
+          <div style="padding: 30px; text-align: center;">
+            <h1 style="font-size: 24px; color: #333333; margin: 0 0 20px;">Hello ${businessName}!</h1>
+            <p style="font-size: 16px; color: #555555; line-height: 1.5; margin: 0 0 20px;">
+              We have received a sign-up attempt for your account. Use the verification code below to complete your registration:
+            </p>
+            <div style="font-size: 28px; font-weight: bold; color: #333333; margin: 20px 0;">
+              ${otp}
+            </div>
+          </div>
+          <div style="text-align: center; font-size: 12px; color: #888888; margin-top: 20px; padding: 10px;">
+            If you did not attempt to register, please ignore this email.
+          </div>
+        </div>
+      </body>
+    `,
+  };
+
+  try {
+    await sendEmailWithNodeMailer(emailData); // Ensure this function handles errors internally
+  } catch (error) {
+    throw new Error('Failed to send verification email');
+  }
+};
+
+
 const getAllUsers = async (req, res, next) => {
   try {
     const search = req.query.search || "";
@@ -63,6 +106,8 @@ const getAllUsers = async (req, res, next) => {
   }
 };
 
+
+
 // Get User by Id
 
 const getUserById = async (req, res, next) => {
@@ -85,6 +130,8 @@ const getUserById = async (req, res, next) => {
     next(error);
   }
 };
+
+
 
 // Delete User for Admin
 
@@ -110,47 +157,51 @@ const deleteUserById = async (req, res, next) => {
   }
 };
 
+
+
+
 // Process Register
 
 const processRegister = async (req, res, next) => {
   try {
-    const { name, email, password, phone, address } = req.body;
+    const { businessName, email, phone, password } = req.body;
 
-    const userExists = await User.exists({ email: email });
+    const user = await User.findOne({ email });
+    const { otp, otpExpiration } = generateOtpAndExpiration();
 
-    if (userExists) {
-      throw createError(
-        409,
-        "User with this email already exists, Please signin"
-      );
+    if (user) {
+      if (!user.isActive) {
+        await sendVerificationEmail(email, otp, user.businessName);
+        return successResponse(res, {
+          statusCode: 200,
+          message: `Please check your email (${email}) to activate your account.`,
+        });
+      } else {
+        return successResponse(res, {
+          statusCode: 409,
+          message: "User already registered and active.",
+        });
+      }
+    } else {
+      const newUser = new User({
+        businessName,
+        email,
+        phone,
+        password,
+        otp,
+        otpExpiration,
+      });
+
+      await newUser.save();
+      await sendVerificationEmail(email, otp, businessName);
+
+      return successResponse(res, {
+        statusCode: 200,
+        message: `Please check your email (${email}) to activate your account.`,
+      });
     }
-
-    const jwtToken = await createJsonWebToken(
-      { name, email, password, phone, address },
-      jwtSecretKey,
-      { expiresIn: "10m" }
-    );
-
-    const emailData = {
-      email,
-      subject: "Account Activation Email",
-      html: `<h1>Hello ${name}!</h1> <p>Please click here to <a href = "${clientUrl}/api/user/activate/${jwtToken}" target = "_black">activate your account</a></p>`,
-    };
-
-    try {
-      await sendEmailWithNodeMailer(emailData);
-    } catch (emailError) {
-      next(createError(500, "Failed to send verification email"));
-      return;
-    }
-
-    return successResponse(res, {
-      statusCode: 200,
-      message: `Please go to your ${email} for completing your registration process`,
-      payload: { token: jwtToken },
-    });
   } catch (error) {
-    next(error);
+    next(error); 
   }
 };
 
@@ -158,47 +209,42 @@ const processRegister = async (req, res, next) => {
 
 const activateUserAccount = async (req, res, next) => {
   try {
-    const { token } = req.body;
+    const { otp, email } = req.body;
 
-    if (!token) {
-      throw createError(404, "Token not found");
+    if (!email || !otp) {
+      throw createError(400, "Email and OTP are required.");
     }
 
-    try {
-      const decoded = jwt.verify(token, jwtSecretKey);
-
-      if (!decoded) {
-        throw createError(401, "User could not be verified");
-      }
-
-      const userExists = await User.exists({ email: decoded.email });
-
-      if (userExists) {
-        throw createError(
-          409,
-          "User with this email already exists, Please signin"
-        );
-      }
-
-      await User.create(decoded);
-
-      return successResponse(res, {
-        statusCode: 201,
-        message: "User was registered successfully",
-      });
-    } catch (error) {
-      if (error.name === "TokenExpiredError") {
-        throw createError(401, "Token has expired");
-      } else if (error.name === "JsonWebTokenError") {
-        throw createError(401, "Invalid token");
-      } else {
-        throw error;
-      }
+    const user = await User.findOne({ email });
+    if (!user) {
+      throw createError(404, "User does not exist.");
     }
+
+    if (user.otp !== otp) {
+      throw createError(400, "Invalid OTP.");
+    }
+
+    if (user.otpExpiration < Date.now()) {
+      throw createError(400, "OTP has expired.");
+    }
+
+    user.otp = null; 
+    user.otpExpiration = null; 
+    user.isActive = true; 
+
+    await user.save();
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: "User account activated successfully.",
+    });
+
   } catch (error) {
     next(error);
   }
 };
+
+
 
 // Update user by id
 

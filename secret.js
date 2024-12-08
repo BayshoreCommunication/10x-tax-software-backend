@@ -12,6 +12,16 @@ const smptPassword = process.env.SMPT_PASSWORD || " ";
 
 const clientUrl = process.env.CLIENT_URL || "";
 
+const cloudName =  process.env.CLOUDINARY_NAME || "";
+const apiKey = process.env.CLOUDINARY_API_KEY || "";
+const apiSecret =process.env.CLOUDINARY_API_SECRET || "";
+
+
+const stripeSecretKey =process.env.STRIPE_SECRET_KEY || "";
+const stripeApiKey =process.env.STRIPE_API_KEY || "";
+
+
+
 module.exports = {
   serverPort,
   dataBaseUrl,
@@ -19,4 +29,9 @@ module.exports = {
   smptUser,
   smptPassword,
   clientUrl,
+  cloudName,
+  apiKey,
+  apiSecret,
+  stripeSecretKey,
+  stripeApiKey
 };

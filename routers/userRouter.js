@@ -20,8 +20,8 @@ userRouter.get("/users", isLoggedIn, isAdmin, getAllUsers);
 userRouter.get("/user/:id", getUserById);
 userRouter.post(
   "/user/register",
-  validateUserRegistration,
-  runValidation,
+  // validateUserRegistration,
+  // runValidation,
   processRegister
 );
 userRouter.post("/user/verify", activateUserAccount);
@@ -34,4 +34,3 @@ userRouter.post("/forget-password", isLoggedIn, validateUserForgatPassword, runV
 userRouter.post("/reset-password", isLoggedIn, validateUserResetPassword, runValidation,resetPassword);
 
 module.exports = { userRouter };
-// ([0-9a-fA-F]{24})
