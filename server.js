@@ -9,9 +9,6 @@ const rateLimit = require("express-rate-limit");
 const { userRouter } = require("./routers/userRouter");
 const { seedRouter } = require("./routers/seedRouter");
 const { authRouter } = require("./routers/authRouter");
-const { categoryRouter } = require("./routers/categoryRouter");
-const { productRouter } = require("./routers/productRouter");
-const { orderRouter } = require("./routers/orderRouter");
 const { errorResponse } = require("./controllers/responseController");
 require("./config/db");
 
@@ -39,9 +36,7 @@ app.use("/api/seed", seedRouter);
 
 app.use("/api", authRouter);
 app.use("/api", userRouter);
-app.use("/api", categoryRouter);
-app.use("/api", productRouter);
-app.use("/api", orderRouter);
+
 
 
 
