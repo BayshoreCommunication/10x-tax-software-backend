@@ -4,7 +4,8 @@ const { jwtSecretKey } = require("../secret");
 
 const isLoggedIn = async (req, res, next) => {
   try {
-    const token = req.cookies.accessToken;
+    const token = req.cookies.accessToken || req.headers.authorization ;
+
 
     if (!token) {
       throw createError(401, "Access denied. No token provided");

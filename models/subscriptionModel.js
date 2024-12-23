@@ -2,16 +2,20 @@ const { Schema, model } = require("mongoose");
 
 const subscriptionSchema = new Schema(
   {
+    userId: {
+      type: Schema.Types.ObjectId, 
+      required: true,
+    },
     paymentInfo: {
       email: {
         type: String,
         required: true,
-        validate: {
-          validator: function (value) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(value);
-          },
-          message: "Please enter a valid email address",
-        },
+        // validate: {
+        //   validator: function (value) {
+        //     return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/i.test(value);
+        //   },
+        //   message: "Please enter a valid email address",
+        // },
       },
       name: {
         type: String,
@@ -44,14 +48,13 @@ const subscriptionSchema = new Schema(
       type: {
         type: String,
         required: true,
-        enum: ["monthly", "yearly"], // Add possible subscription types here
+        enum: ["monthly", "yearly"],
       },
     },
   },
-  { timestamps: true } // Add timestamps to track creation and update times
+  { timestamps: true }
 );
 
 const Subscription = model("Subscription", subscriptionSchema);
 
 module.exports = Subscription;
-

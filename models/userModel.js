@@ -47,7 +47,6 @@ const userSchema = new Schema(
 
     address: {
       type: String,
-      // required: [true, "Address is required"],
       trim: true,
     },
 
@@ -84,16 +83,15 @@ const userSchema = new Schema(
 
     logoUrl: {
       type: String,
-      trim: true,
     },
 
     registerDate: {
       type: Date,
     },
 
-    currentSubscription: {
-      type: String,
-      enum: ["paid", "free"], 
+    subscription: {
+      type: Boolean,
+      default: false,
     },
 
     currentSubscriptionPayDate: {

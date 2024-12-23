@@ -10,6 +10,7 @@ const { userRouter } = require("./routers/userRouter");
 const { seedRouter } = require("./routers/seedRouter");
 const { authRouter } = require("./routers/authRouter");
 const { errorResponse } = require("./controllers/responseController");
+const { subscriptionRouter } = require("./routers/subscriptionRouter");
 require("./config/db");
 
 
@@ -36,6 +37,7 @@ app.use("/api/seed", seedRouter);
 
 app.use("/api", authRouter);
 app.use("/api", userRouter);
+app.use("/api", subscriptionRouter);
 
 
 

@@ -4,18 +4,24 @@ const User = require("../models/userModel");
 const { successResponse } = require("./responseController");
 const { findWithId } = require("../services/findWithId");
 const createJsonWebToken = require("../helper/jsonWebToken");
-const { jwtSecretKey, clientUrl } = require("../secret");
+const { jwtSecretKey, clientUrl, stripeSecretKey } = require("../secret");
 const sendEmailWithNodeMailer = require("../helper/email");
 const jwt = require("jsonwebtoken");
 const runValidation = require("../validator");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+require('dotenv').config();
+const cloudinary = require('cloudinary').v2;
 
-
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const generateOtpAndExpiration = () => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const otpExpiration = Date.now() + 10 * 60 * 1000; // OTP expires in 10 minutes
+  const otpExpiration = Date.now() + 10 * 60 * 1000; 
   return { otp, otpExpiration };
 };
 
@@ -55,6 +61,7 @@ const sendVerificationEmail = async (email, otp, businessName) => {
 };
 
 
+// Get All Users for admin account
 const getAllUsers = async (req, res, next) => {
   try {
     const search = req.query.search || "";
@@ -112,7 +119,8 @@ const getAllUsers = async (req, res, next) => {
 
 const getUserById = async (req, res, next) => {
   try {
-    const id = req.params.id;
+    
+    const id = req.user._id;
     
     const options = { password: 0 };
 
@@ -137,7 +145,7 @@ const getUserById = async (req, res, next) => {
 
 const deleteUserById = async (req, res, next) => {
   try {
-    const id = req.params.id;
+    const id = req.user._id;
 
     const user = await User.findByIdAndDelete({ _id: id, isAdmin: false });
 
@@ -203,10 +211,12 @@ const processRegister = async (req, res, next) => {
       password,
       otp,
       otpExpiration,
+      subscription: false,
       isActive: false,
     });
 
     await newUser.save();
+
     await sendVerificationEmail(email, otp, businessName);
 
     return successResponse(res, {
@@ -266,7 +276,7 @@ const activateUserAccount = async (req, res, next) => {
 
 const updateUserById = async (req, res, next) => {
   try {
-    const userId = req.params.id;
+    const userId = req.user._id;
 
     const updateOptions = { new: true, runValidators: true, context: "query" };
 
@@ -275,7 +285,7 @@ const updateUserById = async (req, res, next) => {
     let updates = {};
 
     for (let key in req.body) {
-      if (["name", "phone", "password", "address"].includes(key)) {
+      if (["businessName", "phone", "address", "website", "businessWebsite", "brandColor", " logoUrl"].includes(key)) {
         updates[key] = req.body[key];
       }
     }
@@ -303,8 +313,68 @@ const updateUserById = async (req, res, next) => {
   }
 };
 
+// User Data Update 
 
-// Update user by id
+const updateUserData = async (req, res, next) => {
+  try {
+    const userId = req.user;
+
+    // Destructure the request body
+    const {
+      businessName,
+      businessWebsite,
+      phone,
+      address,
+      brandColor,
+      website,
+    } = req.body;
+
+    const updateData = {};
+
+
+    if (businessName) updateData.businessName = businessName;
+    if (businessWebsite) updateData.businessWebsite = businessWebsite;
+    if (phone) updateData.phone = phone;
+    if (address) updateData.address = address;
+    if (brandColor) updateData.brandColor = brandColor;
+    if (website) updateData.website = website;
+
+ 
+    if (req.file && req.file.path) {
+      updateData.logoUrl = req.file.path;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true, 
+      runValidators: true, 
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        statusCode: 404,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "User was updated successfully",
+      payload: updatedUser,
+    });
+  } catch (error) {
+    if (error instanceof mongoose.Error.CastError) {
+      return res.status(400).json({
+        statusCode: 400,
+        message: "Invalid user ID",
+      });
+    }
+    next(error);
+  }
+};
+
+
+
+
 
 const updateUserPassword = async (req, res, next) => {
   try {
@@ -359,48 +429,102 @@ const updateUserPassword = async (req, res, next) => {
 
 // Forget password
 
-const forgetPassword= async (req, res, next) => {
+const forgetPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
-   
-    const user = await User.findOne({email: email});
+
+    const user = await User.findOne({ email });
     if (!user) {
-      throw createError(404, "User not found");
+      throw createError(404, "Email is not registered.");
     }
 
-    const jwtToken = await createJsonWebToken(
-      { email },
-      jwtSecretKey,
-      { expiresIn: "10m" }
-    );
+    const { otp, otpExpiration } = generateOtpAndExpiration();
 
-    const emailData = {
-      email,
-      subject: "Account Activation Email",
-      html: `<h1>Hello ${user.name}!</h1> <p>Please click here to <a href = "${clientUrl}/api/user/reset-password/${jwtToken}" target = "_black">Reset Password</a></p>`,
-    };
+    await sendVerificationEmail(email, otp, user.businessName);
 
-    try {
-      await sendEmailWithNodeMailer(emailData);
-    } catch (emailError) {
-      next(createError(500, "Failed to send verification email"));
-      return;
-    }
+    user.otp = otp;
+    user.otpExpiration = otpExpiration;
+    await user.save();
 
     return successResponse(res, {
       statusCode: 200,
-      message: `Please go to your ${email} for resting your password`,
-      payload: { token: jwtToken },
+      message: `Please check your email (${email}) to reset your password.`,
     });
   } catch (error) {
-
-    if (error instanceof mongoose.Error.CastError) {
-      return next(createError(400, "Invalid user ID"));
-    }
-
     next(error);
   }
 };
+
+
+// Forget password check otp
+
+const forgetPasswordCheckOtp = async (req, res, next) => {
+  try {
+    const { otp, email } = req.body;
+
+
+    
+
+    if (!email || !otp) {
+      return next(createError(400, "Email and OTP are required."));
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(createError(404, "User does not exist."));
+    }
+
+
+    if (user.otp !== otp) {
+      return next(createError(400, "Invalid OTP."));
+    }
+
+    if (user.otpExpiration < Date.now()) {
+      return next(createError(400, "OTP has expired."));
+    }
+
+    user.otp = null;
+    user.otpExpiration = null;
+    await user.save();
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: "OTP verified successfully. You can now reset your password.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+//set new password
+
+const newForgetPassword = async (req, res, next) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return next(createError(400, "Email and new password are required."));
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(createError(404, "User does not exist."));
+    }
+
+    user.password =  newPassword;
+    await user.save();
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: "Password reset successfully.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 
 // reset password
 
@@ -444,6 +568,10 @@ const resetPassword = async (req, res, next) => {
 };
 
 
+
+
+
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -452,6 +580,10 @@ module.exports = {
   activateUserAccount,
   updateUserById,
   updateUserPassword,
+  resetPassword,
   forgetPassword,
-  resetPassword
+  forgetPasswordCheckOtp,
+  newForgetPassword,
+  updateUserData
+
 };
