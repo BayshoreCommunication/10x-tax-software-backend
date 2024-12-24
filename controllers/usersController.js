@@ -526,49 +526,190 @@ const newForgetPassword = async (req, res, next) => {
 
 
 
-// reset password
+// Reset password process
 
-const resetPassword = async (req, res, next) => {
+const resetPasswordProcess = async (req, res, next) => {
   try {
-    const { token, newPassword } = req.body;
+    const { oldPassword, newPassword } = req.body;
 
-    const decoded = jwt.verify(token, jwtSecretKey);
-    if (!decoded || !decoded.email) {
-      throw createError(401, "Invalid or expired token");
+  console.log("check new password old password", oldPassword, newPassword);
+  
+
+    if (!oldPassword || !newPassword ) {
+      return next(
+        createError(400, "Old Password and New Password are required.")
+      );
+    }
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return next(createError(404, "User not found"));
     }
 
-    const updatedUser = await User.findOneAndUpdate(
-      { email: decoded.email }, 
-      { password: newPassword },
-      { new: true }
-    ).select("-password");
+    const { otp, otpExpiration } = generateOtpAndExpiration();
 
-    if (!updatedUser) {
-      throw createError(400, "Failed to reset password");
-    }
+    await sendVerificationEmail(user.email, otp, user.businessName);
+
+    user.otp = otp;
+    user.otpExpiration = otpExpiration;
+    await user.save();
 
     return successResponse(res, {
       statusCode: 200,
-      message: "Password was reset successfully",
-      payload: { user: updatedUser },
+      message: "OTP sent successfully",
+      payload: {
+        message: `Please check your email (${user.email}) to verify your account.`,
+      },
     });
   } catch (error) {
-
-    if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
-      return next(createError(401, "Invalid or expired token"));
-    }
-
     if (error instanceof mongoose.Error.CastError) {
       return next(createError(400, "Invalid user ID"));
     }
+    next(error);
+  }
+};
 
+// Reset password process otp verify
 
+const resetPasswordOtpVerify = async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword, otp } = req.body;
+
+    if (!oldPassword || !newPassword || !otp) {
+      return next(
+        createError(400, "Old Password, New Password, and OTP are required.")
+      );
+    }
+
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return next(createError(404, "User does not exist."));
+    }
+
+    if (user.otp !== otp) {
+      return next(createError(400, "Invalid OTP."));
+    }
+
+    if (user.otpExpiration < Date.now()) {
+      return next(createError(400, "OTP has expired."));
+    }
+
+    const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordMatch) {
+      return next(createError(400, "Old password is incorrect."));
+    }
+
+    if (oldPassword === newPassword) {
+      return next(createError(400, "New password must be different from the old password."));
+    }
+
+    user.password = newPassword;
+    user.otp = null;
+    user.otpExpiration = null;
+    await user.save();
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: "Password updated successfully",
+      payload: {
+        message: "Your password has been reset successfully.",
+      },
+    });
+  } catch (error) {
+    if (error instanceof mongoose.Error.CastError) {
+      return next(createError(400, "Invalid user ID"));
+    }
     next(error);
   }
 };
 
 
+// Email Change Process
 
+const emailChangeProcess = async (req, res, next) => {
+  try {
+
+    const {email} = req.body
+
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return next(createError(404, "User not found"));
+    }
+
+    if (user.email === email) {
+      return next(createError(400, "New email must be different from the old email."));
+    }
+
+    const { otp, otpExpiration } = generateOtpAndExpiration();
+
+    await sendVerificationEmail(user.email, otp, user.businessName);
+
+    user.otp = otp;
+    user.otpExpiration = otpExpiration;
+    await user.save();
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: "OTP sent successfully",
+      payload: { },
+    });
+  } catch (error) {
+    if (error instanceof mongoose.Error.CastError) {
+      return next(createError(400, "Invalid user ID"));
+    }
+    next(error);
+  }
+};
+
+// Email change process otp verify
+
+const emailChangeOtpVerify = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return next(
+        createError(400, "email are required.")
+      );
+    }
+
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return next(createError(404, "User does not exist."));
+    }
+
+    if (user.otp !== otp) {
+      return next(createError(400, "Invalid OTP."));
+    }
+
+    if (user.otpExpiration < Date.now()) {
+      return next(createError(400, "OTP has expired."));
+    }
+
+    user.email = email;
+    user.otp = null;
+    user.otpExpiration = null;
+    await user.save();
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: "Email updated successfully",
+      payload: { },
+    });
+  } catch (error) {
+    if (error instanceof mongoose.Error.CastError) {
+      return next(createError(400, "Invalid user ID"));
+    }
+    next(error);
+  }
+};
 
 
 
@@ -580,10 +721,12 @@ module.exports = {
   activateUserAccount,
   updateUserById,
   updateUserPassword,
-  resetPassword,
+  resetPasswordProcess,
+  resetPasswordOtpVerify,
   forgetPassword,
   forgetPasswordCheckOtp,
   newForgetPassword,
-  updateUserData
-
+  updateUserData,
+  emailChangeProcess,
+  emailChangeOtpVerify
 };

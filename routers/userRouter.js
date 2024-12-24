@@ -14,6 +14,10 @@ const {
   forgetPasswordCheckOtp,
   newForgetPassword,
   updateUserData,
+  resetPasswordProcess,
+  resetPasswordOtpVerify,
+  emailChangeProcess,
+  emailChangeOtpVerify,
 } = require("../controllers/usersController");
 const { validateUserRegistration, validateUserPassword, validateUserForgatPassword, validateUserResetPassword } = require("../validator/auth");
 const runValidation = require("../validator");
@@ -41,7 +45,11 @@ userRouter.post("/user/forget-password", forgetPassword);
 userRouter.post("/user/forget-password/verify",  forgetPasswordCheckOtp);
 userRouter.post("/user/forget-password/recovery",   newForgetPassword);
 
-userRouter.post("/reset-password", isLoggedIn, validateUserResetPassword, runValidation,resetPassword);
+userRouter.post("/user/reset-password-otpcheck", isLoggedIn, resetPasswordProcess);
+userRouter.post("/user/reset-password-verify", isLoggedIn, resetPasswordOtpVerify);
+
+userRouter.post("/user/email-change-otpcheck", isLoggedIn, emailChangeProcess);
+userRouter.post("/user/email-change-verify", isLoggedIn, emailChangeOtpVerify);
 
 
 
