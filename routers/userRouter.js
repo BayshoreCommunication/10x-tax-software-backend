@@ -45,11 +45,11 @@ userRouter.post("/user/forget-password", forgetPassword);
 userRouter.post("/user/forget-password/verify",  forgetPasswordCheckOtp);
 userRouter.post("/user/forget-password/recovery",   newForgetPassword);
 
-userRouter.post("/user/reset-password-otpcheck", isLoggedIn, resetPasswordProcess);
-userRouter.post("/user/reset-password-verify", isLoggedIn, resetPasswordOtpVerify);
+userRouter.put("/user/reset-password-otpcheck", isLoggedIn, resetPasswordProcess);
+userRouter.put("/user/reset-password-verify", isLoggedIn, resetPasswordOtpVerify);
 
-userRouter.post("/user/email-change-otpcheck", isLoggedIn, emailChangeProcess);
-userRouter.post("/user/email-change-verify", isLoggedIn, emailChangeOtpVerify);
+userRouter.put("/user/email-change-otpcheck", isLoggedIn, emailChangeProcess);
+userRouter.put("/user/email-change-verify", isLoggedIn, emailChangeOtpVerify);
 
 
 

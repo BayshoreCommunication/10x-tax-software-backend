@@ -532,9 +532,6 @@ const resetPasswordProcess = async (req, res, next) => {
   try {
     const { oldPassword, newPassword } = req.body;
 
-  console.log("check new password old password", oldPassword, newPassword);
-  
-
     if (!oldPassword || !newPassword ) {
       return next(
         createError(400, "Old Password and New Password are required.")
@@ -545,6 +542,15 @@ const resetPasswordProcess = async (req, res, next) => {
     const user = await User.findById(userId);
     if (!user) {
       return next(createError(404, "User not found"));
+    }
+
+    const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordMatch) {
+      return next(createError(400, "Old password is incorrect."));
+    }
+
+    if (oldPassword === newPassword) {
+      return next(createError(400, "New password must be different from the old password."));
     }
 
     const { otp, otpExpiration } = generateOtpAndExpiration();
@@ -574,13 +580,16 @@ const resetPasswordProcess = async (req, res, next) => {
 
 const resetPasswordOtpVerify = async (req, res, next) => {
   try {
-    const { oldPassword, newPassword, otp } = req.body;
+    const { oldPassword, newPassword,  fullOtp } = req.body;
 
-    if (!oldPassword || !newPassword || !otp) {
+    if (!oldPassword || !newPassword || !fullOtp) {
       return next(
-        createError(400, "Old Password, New Password, and OTP are required.")
+        createError(400, "OTP are required.")
       );
     }
+
+
+    
 
     const userId = req.user._id;
     const user = await User.findById(userId);
@@ -589,24 +598,16 @@ const resetPasswordOtpVerify = async (req, res, next) => {
       return next(createError(404, "User does not exist."));
     }
 
-    if (user.otp !== otp) {
+    if (user.otp !== fullOtp) {
       return next(createError(400, "Invalid OTP."));
     }
 
     if (user.otpExpiration < Date.now()) {
       return next(createError(400, "OTP has expired."));
     }
+    
 
-    const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
-    if (!isPasswordMatch) {
-      return next(createError(400, "Old password is incorrect."));
-    }
-
-    if (oldPassword === newPassword) {
-      return next(createError(400, "New password must be different from the old password."));
-    }
-
-    user.password = newPassword;
+    user.password =  newPassword;
     user.otp = null;
     user.otpExpiration = null;
     await user.save();
@@ -647,7 +648,7 @@ const emailChangeProcess = async (req, res, next) => {
 
     const { otp, otpExpiration } = generateOtpAndExpiration();
 
-    await sendVerificationEmail(user.email, otp, user.businessName);
+    await sendVerificationEmail(email, otp, user.businessName);
 
     user.otp = otp;
     user.otpExpiration = otpExpiration;
@@ -670,7 +671,7 @@ const emailChangeProcess = async (req, res, next) => {
 
 const emailChangeOtpVerify = async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const { email, fullOtp } = req.body;
 
     if (!email) {
       return next(
@@ -685,7 +686,7 @@ const emailChangeOtpVerify = async (req, res, next) => {
       return next(createError(404, "User does not exist."));
     }
 
-    if (user.otp !== otp) {
+    if (user.otp !== fullOtp) {
       return next(createError(400, "Invalid OTP."));
     }
 
@@ -701,12 +702,12 @@ const emailChangeOtpVerify = async (req, res, next) => {
     return successResponse(res, {
       statusCode: 200,
       message: "Email updated successfully",
-      payload: { },
+      payload: {},
     });
   } catch (error) {
     if (error instanceof mongoose.Error.CastError) {
       return next(createError(400, "Invalid user ID"));
-    }
+    };
     next(error);
   }
 };
