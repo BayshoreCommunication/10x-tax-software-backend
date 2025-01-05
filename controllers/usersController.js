@@ -145,22 +145,27 @@ const getUserById = async (req, res, next) => {
 
 const deleteUserById = async (req, res, next) => {
   try {
-    const id = req.user._id;
+    const { id } = req.params;
 
-    const user = await User.findByIdAndDelete({ _id: id, isAdmin: false });
+    // Delete the user with the given ID only if `isAdmin` is false
+    const user = await User.findOneAndDelete({ _id: id, isAdmin: false });
 
     if (!user) {
-      throw createError(404, "User dose not exist with this id");
+      // User not found or `isAdmin` is true
+      return next(createError(404, "User does not exist with this ID or is an admin"));
     }
 
+    // Respond with success
     return successResponse(res, {
       statusCode: 200,
       message: "User successfully deleted",
     });
   } catch (error) {
-    if(error instanceof mongoose.Error.CastError){
-      throw createError(400, "Invalid Id")
+    // Handle invalid ID format
+    if (error.name === "CastError") {
+      return next(createError(400, "Invalid ID format"));
     }
+    // Pass other errors to the global error handler
     next(error);
   }
 };

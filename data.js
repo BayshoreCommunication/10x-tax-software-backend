@@ -18,20 +18,9 @@ const data = [
     "isBanned": false,
     "otp" : "",
     "otpExpiration" : "",
-    // "subscriptionDetails": [{ "paymentInfo": {
-    //   "email": "arsahak@gmail.com",
-    //   "name": "AR Sahak",
-    //   "country": "Bangladesh",
-    //   "address": "Dhaka, Bangladesh",
-    //   "paymentId": "4478/512365478925871"
-    // },"subscriptionInfo": {
-    //   "subscriptionDate": "03-12-2024",
-    //   "subscriptionExpiredDate": "04-01-2025",
-    //   "type": "monthly",
-    // }}],
-   
   }
 ]
 
 
 module.exports = data;
+

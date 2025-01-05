@@ -14,18 +14,18 @@ const { subscriptionRouter } = require("./routers/subscriptionRouter");
 require("./config/db");
 
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 100,
-  message: "Too many reqeust from this ip please try later",
-  // standardHeaders: "draft-7",
-  // legacyHeaders: false,
-});
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000,
+//   limit: 100,
+//   message: "Too many reqeust from this ip please try later",
+//   // standardHeaders: "draft-7",
+//   // legacyHeaders: false,
+// });
 
 const app = express();
 
 app.use(cookieParser());
-app.use(limiter);
+// app.use(limiter);
 app.use(cors())
 app.use(xssClean());
 app.use(morgan("dev"));

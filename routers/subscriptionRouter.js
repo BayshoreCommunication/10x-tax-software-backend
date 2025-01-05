@@ -10,7 +10,7 @@ subscriptionRouter.post("/create-payment-intent",   isLoggedIn, subscriptionPaym
 
 subscriptionRouter.post("/subscription", isLoggedIn, createSubscription);
 
-subscriptionRouter.get("/subscription", isLoggedIn, getSubscriptionByUserId);
+subscriptionRouter.get("/subscription/:id", getSubscriptionByUserId);
 
 
 module.exports = {subscriptionRouter };

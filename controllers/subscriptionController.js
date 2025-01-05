@@ -76,32 +76,68 @@ const createSubscription = async (req, res, next) => {
   }
 };
 
-/**
- * Retrieves subscription data for a user by user ID.
- */
+
+// Retrieves subscription data for a user by user ID.
+
 const getSubscriptionByUserId = async (req, res, next) => {
   try {
-    const userId = req.user._id;
+    const { id: userId } = req.params;
 
     const user = await User.findById(userId);
     if (!user) {
-      throw createError(404, "User not found.");
+      return next(createError(404, "User not found."));
     }
 
-    const subscription = await Subscription.findOne({ userId });
-    if (!subscription) {
-      throw createError(404, "No subscription found for this user.");
-    }
+    const search = req.query.search || "";
+    const page = Math.max(1, Number(req.query.page) || 1); 
+    const limit = Math.max(1, Number(req.query.limit) || 5); 
+
+    const escapeRegExp = (string) =>
+      string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const safeSearch = escapeRegExp(search);
+
+    const searchRegExp = new RegExp(`.*${safeSearch}.*`, "i");
+    const filter = {
+      $or: [
+        { subscriptionDate: searchRegExp },
+        { subscriptionExpiredDate: searchRegExp },
+        { type: searchRegExp },
+      ],
+      userId,
+    };
+
+    const subscriptions = await Subscription.find(filter)
+      .limit(limit)
+      .skip((page - 1) * limit);
+
+    const count = await Subscription.countDocuments(filter);
+
+    const totalPages = Math.ceil(count / limit);
 
     return successResponse(res, {
       statusCode: 200,
       message: "Subscription data retrieved successfully",
-      payload: { subscription },
+      payload: {
+        subscriptions,
+        pagination: {
+          totalPages,
+          currentPage: page,
+          previousPage: page > 1 ? page - 1 : null,
+          nextPage: page < totalPages ? page + 1 : null,
+        },
+      },
     });
   } catch (error) {
+    if (error.name === "CastError") {
+      return next(createError(400, "Invalid ID format"));
+    }
     next(createError(500, error.message || "Failed to retrieve subscription data."));
   }
 };
+
+
+
+
 
 module.exports = {
   subscriptionPayment,
