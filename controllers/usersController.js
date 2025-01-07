@@ -66,7 +66,7 @@ const getAllUsers = async (req, res, next) => {
   try {
     const search = req.query.search || "";
     const page = Number(req.query.page || 1);
-    const limit = Number(req.query.limit || 5);
+    const limit = Number(req.query.limit || 10);
 
     const escapeRegExp = (string) =>
       string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -77,7 +77,9 @@ const getAllUsers = async (req, res, next) => {
     const filter = {
       isAdmin: { $ne: true },
       $or: [
-        { name: searchRegExp },
+        { businessName: searchRegExp },
+        { address: searchRegExp },
+        { businessWebsite: searchRegExp },
         { email: searchRegExp },
         { phone: searchRegExp },
       ],
