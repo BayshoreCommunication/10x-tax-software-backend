@@ -89,14 +89,17 @@ const getSubscriptionByUserId = async (req, res, next) => {
     }
 
     const search = req.query.search || "";
-    const page = Math.max(1, Number(req.query.page) || 1); 
-    const limit = Math.max(1, Number(req.query.limit) || 5); 
+    const selectFilterOption = req.query.selectFilterOption || "All"; // Default to "All"
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Number(req.query.limit) || 5);
 
     const escapeRegExp = (string) =>
       string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const safeSearch = escapeRegExp(search);
 
     const searchRegExp = new RegExp(`.*${safeSearch}.*`, "i");
+
+    // Base filter
     const filter = {
       $or: [
         { subscriptionDate: searchRegExp },
@@ -105,6 +108,13 @@ const getSubscriptionByUserId = async (req, res, next) => {
       ],
       userId,
     };
+
+    // Adjust filter based on `selectFilterOption`
+    if (selectFilterOption === "Monthly") {
+      filter["subscriptionInfo.type"] = "Monthly";
+    } else if (selectFilterOption === "Yearly") {
+      filter["subscriptionInfo.type"] = "Yearly";
+    }
 
     const subscriptions = await Subscription.find(filter)
       .limit(limit)
@@ -131,9 +141,15 @@ const getSubscriptionByUserId = async (req, res, next) => {
     if (error.name === "CastError") {
       return next(createError(400, "Invalid ID format"));
     }
-    next(createError(500, error.message || "Failed to retrieve subscription data."));
+    next(
+      createError(
+        500,
+        error.message || "Failed to retrieve subscription data."
+      )
+    );
   }
 };
+
 
 
 

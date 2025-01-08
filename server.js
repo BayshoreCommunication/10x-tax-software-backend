@@ -12,6 +12,8 @@ const { authRouter } = require("./routers/authRouter");
 const { errorResponse } = require("./controllers/responseController");
 const { subscriptionRouter } = require("./routers/subscriptionRouter");
 const { taxRangeSheetRouter } = require("./routers/taxRangeSheetRoutes");
+const clientDetialsRouter = require("./routers/clientDetialsRouter");
+const textPlanGeneratorRouter = require("./routers/textPlanGeneratorRouter");
 
 require("./config/db");
 
@@ -41,8 +43,8 @@ app.use("/api", authRouter);
 app.use("/api", userRouter);
 app.use("/api", subscriptionRouter);
 app.use("/api", taxRangeSheetRouter);
-
-
+app.use("/api", clientDetialsRouter);
+app.use("/api", textPlanGeneratorRouter);
 
 
 app.get("/", (req, res) => {
