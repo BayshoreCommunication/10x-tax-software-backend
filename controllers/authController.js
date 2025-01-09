@@ -52,7 +52,7 @@ const userLogin = async (req, res, next) => {
       <h1 style="margin: 0; font-size: 24px;">Verify your email</h1>
     </div>
     <div style="padding: 30px; text-align: center;">
-      <h1 style="font-size: 24px; color: #333333; margin: 0 0 20px;">Hello ${"AR Sahak"}!</h1>
+      <h1 style="font-size: 24px; color: #333333; margin: 0 0 20px;">Hello ${user.businessName}!</h1>
       <p style="font-size: 16px; color: #555555; line-height: 1.5; margin: 0 0 20px;">
         We have received a login attempt to your account. Use the verification code below to proceed:
       </p>
