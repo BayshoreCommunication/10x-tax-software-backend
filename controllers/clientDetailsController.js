@@ -5,10 +5,11 @@ const { successResponse } = require("./responseController");
 const createClientDetails = async (req, res, next) => {
   try {
 
+
     const userId = req.user?._id;
 
-    const { basicInformation, fillingStatus, strategy, dependents } = req.body;
-
+    const { basicInformation, fillingStatus, strategy, dependents} = req.body;
+    
     const newClientDetails = new ClientDetails({
       userId,
       basicInformation,
@@ -22,7 +23,7 @@ const createClientDetails = async (req, res, next) => {
     return successResponse(res, {
       statusCode: 201,
       message: "Client details created successfully",
-      payload: {newClientDetails}
+      payload: {}
     });
   } catch (error) {
     next(createError(500, error.message || "Failed to create client details."));

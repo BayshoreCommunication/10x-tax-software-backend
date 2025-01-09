@@ -6,7 +6,7 @@ const clientDetailsSchema = new Schema(
       type: Schema.Types.ObjectId, 
       required: true,
     },
-    basicInformation: [
+    basicInformation: 
       {
         fullName: { type: String, required: true },
         phone: { type: String, required: true },
@@ -16,18 +16,16 @@ const clientDetailsSchema = new Schema(
         dateOfBirth: { type: Date, required: true },
         maritalStatus: { type: String, required: true },
         address: { type: String, required: true },
-        spouseDetails: [
+        spouseDetails: 
           {
             fullName: String,
             profession: String,
             income: Number,
             dateOfBirth: Date,
           },
-        ],
       },
-    ],
-    fillingStatus: { type: String, required: true },
-    strategy: [
+    fillingStatus: { type: String},
+    strategy: 
       {
         homeOffice: String,
         depreciation: String,
@@ -38,15 +36,14 @@ const clientDetailsSchema = new Schema(
         costSegregation: String,
         rentHomeToCorporation: String,
       },
-    ],
-    dependents: [
+    
+    dependents: 
       {
         underAge17: String,
         fullTimeStudentsAge17To23: String,
         otherDependents: String,
         totalNumberOfDependents: String,
       },
-    ],
   },
   { timestamps: true }
 );
