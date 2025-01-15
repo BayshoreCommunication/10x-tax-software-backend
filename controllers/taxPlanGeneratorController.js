@@ -1,6 +1,46 @@
 const TaxPlanGenerator = require("../models/taxPlanGeneratorModel");
 const createError = require("http-errors");
 const { successResponse } = require("./responseController");
+const sendEmailWithNodeMailer = require("../helper/email");
+const path = require("path");
+const nodemailer = require("nodemailer");
+const fs = require("fs");
+const { smptUser, smptPassword } = require("../secret");
+const sendProposalEmail = require("../helper/sendProposalEmail");
+const sendTaxProposalTemplate = async (email, imageUrl, clientName) => {
+
+
+  const emailData = {
+    email,
+    subject: "10x Tax Proposal",
+    html: `
+      <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 15px;">
+        <div style="max-width: 1280px; margin: 30px auto; background: #ffffff; border: 1px solid #dddddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); overflow: hidden;">
+          <div style="padding: 30px; text-align: center;">
+            <h1 style="font-size: 24px; color: #333333; margin: 0 0 20px;">Hello ${clientName}!</h1>
+            <p style="font-size: 16px; color: #555555; line-height: 1.5; margin: 0 0 20px;">
+              We have received a sign-up attempt for your account. Use the verification code below to complete your registration:
+            </p>
+            <img src="${imageUrl}" alt="Uploaded Image" style="max-width: 100%; border-radius: 8px; margin-top: 20px;" />
+          </div>
+          <div style="text-align: center; font-size: 12px; color: #888888; margin-top: 20px; padding: 10px;">
+            If you did not attempt to register, please ignore this email.
+          </div>
+        </div>
+      </body>
+    `,
+  };
+
+  try {
+    await sendEmailWithNodeMailer(emailData); // Ensure this function handles errors internally
+  } catch (error) {
+    throw new Error('Failed to send verification email');
+  }
+};
+
+
+
+
 
 const createTaxPlan = async (req, res, next) => {
   try {
@@ -86,9 +126,40 @@ const deleteTaxPlan = async (req, res, next) => {
   }
 };
 
+
+
+const sendTaxProposal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded!" });
+    }
+
+    const {email, clientName} = req.body;
+
+    const emailData = {email: email, subject: "This is 10x Tax Proposal", text: "This si demo test for me"}
+  
+    await sendProposalEmail(emailData, req.file)
+
+    // Remove the file after sending email
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error("Error deleting file:", err);
+    });
+
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: "Tax proposal send successfully",
+      payload: {}
+    });
+  } catch (error) {
+    next(createError(500, error.message || "Failed to send tax proposal."));
+  }
+};
+
 module.exports = {
   createTaxPlan,
   getTaxPlanByUserId,
   updateTaxPlan,
   deleteTaxPlan,
+  sendTaxProposal,
 };
