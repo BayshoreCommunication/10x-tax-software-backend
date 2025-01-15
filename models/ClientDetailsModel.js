@@ -44,6 +44,17 @@ const clientDetailsSchema = new Schema(
         otherDependents: String,
         totalNumberOfDependents: String,
       },
+      deduction:  { type: Boolean},
+      standardDeduction: {
+        itemizedDeduction: String,
+        taxesWithheld: String,
+      },
+      advanced: {
+        contributations: String,
+        iRAContributations: String,
+        otherDeductions: String,
+        taxCredits: String,
+      }
   },
   { timestamps: true }
 );
