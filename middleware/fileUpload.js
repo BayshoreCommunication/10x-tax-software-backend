@@ -3,9 +3,28 @@ const fs = require("fs");
 const path = require("path");
 
 // Define storage configuration
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     const uploadDir = path.join(__dirname, "uploads");
+
+//     try {
+//       if (!fs.existsSync(uploadDir)) {
+//         fs.mkdirSync(uploadDir, { recursive: true });
+//       }
+//       cb(null, uploadDir);
+//     } catch (err) {
+//       console.error("Error creating upload directory:", err);
+//       cb(new Error("Failed to create upload directory"), null);
+//     }
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, `${Date.now()}-${file.originalname}`);
+//   },
+// });
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, "uploads");
+    const uploadDir = path.join("/tmp", "uploads");
 
     try {
       if (!fs.existsSync(uploadDir)) {
@@ -13,7 +32,7 @@ const storage = multer.diskStorage({
       }
       cb(null, uploadDir);
     } catch (err) {
-      console.error("Error creating upload directory:", err);
+      console.error("Failed to create upload directory:", err);
       cb(new Error("Failed to create upload directory"), null);
     }
   },
@@ -21,6 +40,7 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}-${file.originalname}`);
   },
 });
+
 
 // File type filter
 const fileFilter = (req, file, cb) => {
