@@ -5,41 +5,44 @@ const path = require("path");
 // Define storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, "uploads"); // Ensure the path is correct for your setup
+    const uploadDir = path.join(__dirname, "uploads");
 
-    // Check if the directory exists; if not, create it
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    } catch (err) {
+      console.error("Error creating upload directory:", err);
+      cb(new Error("Failed to create upload directory"), null);
     }
-
-    cb(null, uploadDir); // Use the directory as the upload destination
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`); // Add timestamp to file name
+    cb(null, `${Date.now()}-${file.originalname}`);
   },
 });
 
-// File type filter (e.g., accept only PDFs, images, etc.)
+// File type filter
 const fileFilter = (req, file, cb) => {
-  const allowedFileTypes = /pdf|jpg|jpeg|png/; // Add extensions you want to allow
+  const allowedFileTypes = /pdf|jpg|jpeg|png/;
   const extname = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedFileTypes.test(file.mimetype);
 
   if (extname && mimetype) {
-    cb(null, true); // Accept file
+    cb(null, true);
   } else {
-    cb(new Error("Only PDF, JPG, and PNG files are allowed!")); // Reject file
+    cb(new Error("Only PDF, JPG, and PNG files are allowed!"), false);
   }
 };
 
-// Configure multer with storage and file filter
+// Configure multer
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Optional: Limit file size to 5MB
+  limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
 });
 
 // Middleware for single file upload
-const uploadFileMiddleware = upload.single("file"); // "file" should match the key in your form-data
+const uploadFileMiddleware = upload.single("file");
 
 module.exports = { uploadFileMiddleware };
