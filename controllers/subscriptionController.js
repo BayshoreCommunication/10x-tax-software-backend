@@ -11,7 +11,7 @@ const stripe = new Stripe(stripeSecretKey);
  * Handles the creation of a payment intent for a subscription.
  */
 const subscriptionPayment = async (req, res, next) => {
-  const { amount, currency } = req.body;
+  const { amount, currency, customerDetails  } = req.body;
 
   try {
     if (!amount || !currency) {
@@ -22,6 +22,23 @@ const subscriptionPayment = async (req, res, next) => {
       amount,
       currency,
       payment_method_types: ["card"],
+      description: "Payment for subscription",
+      receipt_email: customerDetails.email,
+      metadata: {
+        name: customerDetails.name,
+        phone: customerDetails.phone,
+      },
+      shipping: {
+        name: customerDetails.name,
+        phone: customerDetails.phone,
+        address: {
+          // line1: customerDetails.address.line1,
+          city: customerDetails.address.city,
+          // state: customerDetails.address.state,
+          // postal_code: customerDetails.address.postal_code,
+          country: customerDetails.address.country,
+        },
+      },
     });
 
     return successResponse(res, {
