@@ -2,11 +2,11 @@ const { Schema, model } = require("mongoose");
 
 const taxPlanGeneratorSchema = new Schema(
   {
-    userId: {
+    clientId: {
       type: Schema.Types.ObjectId, 
       required: true,
     },
-    taxableIncome: [
+    taxableIncome: 
       {
         grossIncome: { type: Number, required: true },
         standardDeduction: { type: Number, required: true },
@@ -14,8 +14,8 @@ const taxPlanGeneratorSchema = new Schema(
         otherDeductions: { type: Number, required: true },
         taxableIncome: { type: Number, required: true },
       },
-    ],
-    estimatedFederalTaxes: [
+    
+    estimatedFederalTaxes: 
       {
         estimatedTaxesBeforeAdjustments: { type: Number, required: true },
         federalTaxesWithheld: { type: Number, required: true },
@@ -24,7 +24,7 @@ const taxPlanGeneratorSchema = new Schema(
         marginalTaxRate: { type: Number, required: true },
         effectiveTaxRate: { type: Number, required: true },
       },
-    ],
+    
   },
   { timestamps: true }
 );

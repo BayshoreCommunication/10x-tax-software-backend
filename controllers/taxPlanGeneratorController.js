@@ -44,10 +44,10 @@ const sendTaxProposalTemplate = async (email, imageUrl, clientName) => {
 
 const createTaxPlan = async (req, res, next) => {
   try {
-    const { userId, taxableIncome, estimatedFederalTaxes } = req.body;
+    const { clientId, taxableIncome, estimatedFederalTaxes } = req.body;
 
     const newTaxPlan = new TaxPlanGenerator({
-      userId,
+      clientId,
       taxableIncome,
       estimatedFederalTaxes,
     });
@@ -66,9 +66,9 @@ const createTaxPlan = async (req, res, next) => {
 
 const getTaxPlanByUserId = async (req, res, next) => {
   try {
-    const { id: userId } = req.params;
+    const { id: clientId } = req.params;
 
-    const taxPlan = await TaxPlanGenerator.findOne({ userId });
+    const taxPlan = await TaxPlanGenerator.find({ clientId });
     if (!taxPlan) {
       return next(createError(404, "Tax plan not found."));
     }
