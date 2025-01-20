@@ -1,6 +1,8 @@
 const createError = require("http-errors");
 const data = require("../data");
 const User = require("../models/userModel");
+const ClientDetails = require("../models/ClientDetailsModel");
+const TaxPlanGenerator = require("../models/taxPlanGeneratorModel");
 const { successResponse } = require("./responseController");
 const { findWithId } = require("../services/findWithId");
 const createJsonWebToken = require("../helper/jsonWebToken");
@@ -10,6 +12,7 @@ const jwt = require("jsonwebtoken");
 const runValidation = require("../validator");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const ProposalSend = require("../models/proposalSendModel");
 require('dotenv').config();
 const cloudinary = require('cloudinary').v2;
 
@@ -719,6 +722,57 @@ const emailChangeOtpVerify = async (req, res, next) => {
   }
 };
 
+//User dashboard overview
+
+const userOverViewDetails = async (req, res, next) => {
+  try {
+
+    const userId = req.user._id;
+
+    const [user, clients, taxPlans, proposalSendList] = await Promise.all([
+      User.findById(userId),
+      ClientDetails.find({ userId }),
+      TaxPlanGenerator.find({ userId }),
+      ProposalSend.find({ userId }),
+    ]);
+
+    // const userId = req.user._id;
+
+    // const user = await User.findById(userId);
+
+    if (!user) {
+      return next(createError(404, "User not found"));
+    }
+
+    if (!clients || clients.length === 0) {
+      throw createError(404, "No clients found for this user.");
+    }
+    if (!taxPlans || taxPlans.length === 0) {
+      throw createError(404, "No tax plans found for this user.");
+    }
+    if (!proposalSendList || proposalSendList.length === 0) {
+      throw createError(404, "No proposals found for this user.");
+    }
+
+    const overview = {
+      totalClient: clients.length,
+      subscriptionPlan: user.subscription || "N/A", 
+      paymentStatus: user.currentSubscriptionType || "N/A", 
+      subscriptionEndDate: user.currentSubscriptionExpiredDate || "N/A",
+      totalPlan: taxPlans.length,
+      totalProposalSend: proposalSendList.length,
+    };
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: "User overview list fetched successfully.",
+      payload: { overview},
+    });
+  } catch (error) {
+    next(createError(500, error.message || "An error occurred while fetching user overview list."));
+  }
+};
+
 
 
 module.exports = {
@@ -736,5 +790,6 @@ module.exports = {
   newForgetPassword,
   updateUserData,
   emailChangeProcess,
-  emailChangeOtpVerify
+  emailChangeOtpVerify,
+  userOverViewDetails
 };

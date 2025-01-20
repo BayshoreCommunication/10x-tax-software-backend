@@ -18,6 +18,7 @@ const {
   resetPasswordOtpVerify,
   emailChangeProcess,
   emailChangeOtpVerify,
+  userOverViewDetails,
 } = require("../controllers/usersController");
 const { validateUserRegistration, validateUserPassword, validateUserForgatPassword, validateUserResetPassword } = require("../validator/auth");
 const runValidation = require("../validator");
@@ -51,6 +52,6 @@ userRouter.put("/user/reset-password-verify", isLoggedIn, resetPasswordOtpVerify
 userRouter.put("/user/email-change-otpcheck", isLoggedIn, emailChangeProcess);
 userRouter.put("/user/email-change-verify", isLoggedIn, emailChangeOtpVerify);
 
-
+userRouter.get("/user-overview", isLoggedIn,  userOverViewDetails);
 
 module.exports = { userRouter };

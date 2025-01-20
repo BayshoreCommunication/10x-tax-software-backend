@@ -7,6 +7,7 @@ const nodemailer = require("nodemailer");
 const fs = require("fs");
 const { smptUser, smptPassword } = require("../secret");
 const sendProposalEmail = require("../helper/sendProposalEmail");
+const ProposalSend = require("../models/proposalSendModel");
 const sendTaxProposalTemplate = async (email, imageUrl, clientName) => {
 
 
@@ -134,13 +135,24 @@ const sendTaxProposal = async (req, res, next) => {
       return res.status(400).json({ message: "No file uploaded!" });
     }
 
-    const {email, clientName} = req.body;
+    const userId = req.user._id;
+
+    const {email, clientName, clientId} = req.body;
 
     const emailData = {email: email, subject: "This is 10x Tax Proposal", text: "This si demo test for me"}
   
     await sendProposalEmail(emailData, req.file)
 
-    // Remove the file after sending email
+    const proposalRecord = new ProposalSend({
+      userId,
+      clientId,
+      clientName,
+      clientEmail: email,
+    });
+
+    await proposalRecord.save();
+
+
     fs.unlink(req.file.path, (err) => {
       if (err) console.error("Error deleting file:", err);
     });
@@ -156,10 +168,34 @@ const sendTaxProposal = async (req, res, next) => {
   }
 };
 
+const getProposalSend = async (req, res, next) => {
+  try {
+    const userId = req.user._id; 
+
+    const proposalSendList = await ProposalSend.find({ userId }); 
+
+    if (!proposalSendList || proposalSendList.length === 0) {
+      throw createError(404, "No proposals found for this user.");
+    }
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: "Proposal send list fetched successfully.",
+      payload: { proposalSendList },
+    });
+  } catch (error) {
+    next(createError(500, error.message || "Failed to send tax proposal."));
+  }
+};
+
+
 module.exports = {
   createTaxPlan,
   getTaxPlanByUserId,
   updateTaxPlan,
   deleteTaxPlan,
   sendTaxProposal,
+  getProposalSend
 };
+
+
