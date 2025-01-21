@@ -45,9 +45,13 @@ const sendTaxProposalTemplate = async (email, imageUrl, clientName) => {
 
 const createTaxPlan = async (req, res, next) => {
   try {
+
+    const userId = req.user._id;
+
     const { clientId, taxableIncome, estimatedFederalTaxes } = req.body;
 
     const newTaxPlan = new TaxPlanGenerator({
+      userId,
       clientId,
       taxableIncome,
       estimatedFederalTaxes,

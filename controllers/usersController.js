@@ -722,6 +722,7 @@ const emailChangeOtpVerify = async (req, res, next) => {
   }
 };
 
+
 //User dashboard overview
 
 const userOverViewDetails = async (req, res, next) => {
@@ -736,21 +737,18 @@ const userOverViewDetails = async (req, res, next) => {
       ProposalSend.find({ userId }),
     ]);
 
-    // const userId = req.user._id;
-
-    // const user = await User.findById(userId);
 
     if (!user) {
       return next(createError(404, "User not found"));
     }
 
-    if (!clients || clients.length === 0) {
+    if (!clients) {
       throw createError(404, "No clients found for this user.");
     }
-    if (!taxPlans || taxPlans.length === 0) {
+    if (!taxPlans ) {
       throw createError(404, "No tax plans found for this user.");
     }
-    if (!proposalSendList || proposalSendList.length === 0) {
+    if (!proposalSendList ) {
       throw createError(404, "No proposals found for this user.");
     }
 
@@ -772,7 +770,6 @@ const userOverViewDetails = async (req, res, next) => {
     next(createError(500, error.message || "An error occurred while fetching user overview list."));
   }
 };
-
 
 
 module.exports = {

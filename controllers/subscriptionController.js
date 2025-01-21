@@ -11,17 +11,21 @@ const stripe = new Stripe(stripeSecretKey);
  * Handles the creation of a payment intent for a subscription.
  */
 const subscriptionPayment = async (req, res, next) => {
-  const { amount, currency, customerDetails  } = req.body;
+  const { amount, currency, customerDetails, paymentMethodType } = req.body;
 
   try {
     if (!amount || !currency) {
       throw createError(400, "Amount and currency are required.");
     }
 
+    // Ensure payment method type is provided, default to "us_bank_account"
+    const paymentMethodTypes = paymentMethodType || ["us_bank_account"];
+
+    // Create the payment intent
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency,
-      payment_method_types: ["card"],
+      payment_method_types: paymentMethodTypes, // Using provided payment method type
       description: "Payment for subscription",
       receipt_email: customerDetails.email,
       metadata: {
@@ -32,28 +36,30 @@ const subscriptionPayment = async (req, res, next) => {
         name: customerDetails.name,
         phone: customerDetails.phone,
         address: {
-          // line1: customerDetails.address.line1,
           city: customerDetails.address.city,
-          // state: customerDetails.address.state,
-          // postal_code: customerDetails.address.postal_code,
           country: customerDetails.address.country,
         },
       },
     });
 
+
+    if (!paymentIntent.client_secret) {
+      throw createError(500, "Failed to create payment intent: No client secret.");
+    }
+
+    
     return successResponse(res, {
       statusCode: 200,
       message: "Payment intent created successfully",
       payload: { clientSecret: paymentIntent.client_secret },
     });
   } catch (error) {
+    console.error("Error creating payment intent:", error);
     next(createError(500, error.message || "Failed to create payment intent."));
   }
 };
 
-/**
- * Creates a new subscription and updates the user's subscription details.
- */
+
 const createSubscription = async (req, res, next) => {
   try {
     const userId = req.user._id;
@@ -63,6 +69,7 @@ const createSubscription = async (req, res, next) => {
       throw createError(400, "Payment and subscription information are required.");
     }
 
+   
     const user = await User.findById(userId);
     if (!user) {
       throw createError(404, "User not found.");
@@ -166,6 +173,7 @@ const getSubscriptionByUserId = async (req, res, next) => {
     );
   }
 };
+
 
 
 

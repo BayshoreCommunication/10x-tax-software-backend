@@ -2,10 +2,17 @@ const { Schema, model } = require("mongoose");
 
 const taxPlanGeneratorSchema = new Schema(
   {
+
+    userId: {
+      type: Schema.Types.ObjectId, 
+      required: true,
+    },
+
     clientId: {
       type: Schema.Types.ObjectId, 
       required: true,
     },
+
     taxableIncome: 
       {
         grossIncome: { type: Number, required: true },
