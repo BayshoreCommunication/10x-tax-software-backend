@@ -35,6 +35,10 @@ const clientDetailsSchema = new Schema(
         scheduleCToSCorp: String,
         costSegregation: String,
         rentHomeToCorporation: String,
+        healthInsurance: String,
+        fringeBenefits: String,
+        accountablePlan: String,
+        other: String,
       },
     
     dependents: 
