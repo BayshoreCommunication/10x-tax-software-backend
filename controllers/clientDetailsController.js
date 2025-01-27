@@ -37,7 +37,7 @@ const getClientDetailsById = async (req, res, next) => {
   try {
    const { id: userId } = req.params;
 
-    const clientDetails = await ClientDetails.findOne({ userId });
+    const clientDetails = await ClientDetails.findOne({ userId })
     if (!clientDetails) {
       return next(createError(404, "Client details not found."));
     }
@@ -112,6 +112,7 @@ const getClientsDetailsByUserId = async (req, res, next) => {
     const clients = await ClientDetails.find(filter)
       .limit(limit)
       .skip((page - 1) * limit)
+      .sort({ updatedAt: -1 }) 
       .exec();
 
     const totalPages = Math.ceil(totalClients / limit);
