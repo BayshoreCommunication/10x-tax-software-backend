@@ -1,25 +1,26 @@
-const TaxRangeSheet = require("../models/taxRangeSheet"); 
+const TaxRangeSheet = require("../models/taxRangeSheet");
 const createError = require("http-errors");
 const { successResponse } = require("./responseController");
-
 const mongoose = require("mongoose");
 
 const createTaxRangeSheet = async (req, res, next) => {
   try {
-    const { taxRates } = req.body;
+    const { single, marriedFilingJointly, marriedFilingSeparately, headOfHousehold } = req.body;
 
-    if (!taxRates || taxRates.length === 0) {
-      throw createError(400, "Tax rates are required.");
+    if (!single || !marriedFilingJointly || !marriedFilingSeparately || !headOfHousehold) {
+      throw createError(400, "All filing statuses (Single, MarriedFilingJointly, MarriedFilingSeparately, HeadOfHousehold) are required.");
     }
 
     let taxRangeSheet = await TaxRangeSheet.findOne();
-
     if (taxRangeSheet) {
       throw createError(400, "Tax range sheet already exists.");
     }
 
     taxRangeSheet = new TaxRangeSheet({
-      taxRates,
+      single,
+      marriedFilingJointly,
+      marriedFilingSeparately,
+      headOfHousehold,
     });
 
     await taxRangeSheet.save();
@@ -39,28 +40,22 @@ const createTaxRangeSheet = async (req, res, next) => {
 
 const editTaxRangeSheet = async (req, res, next) => {
   try {
-
-
-
     const { id } = req.params;
+    const { single, marriedFilingJointly, marriedFilingSeparately, headOfHousehold } = req.body;
 
-    const { taxRates } = req.body;
-
-
-    console.log(taxRates);
-    
-
-    if (!taxRates || taxRates.length === 0) {
-      throw createError(400, "Tax rates are required.");
+    if (!single && !marriedFilingJointly && !marriedFilingSeparately && !headOfHousehold) {
+      throw createError(400, "At least one filing status must be provided for update.");
     }
 
-    const taxRangeSheet = await TaxRangeSheet.findOne({ _id: id, }); 
-
+    const taxRangeSheet = await TaxRangeSheet.findById(id);
     if (!taxRangeSheet) {
       throw createError(404, "Tax range sheet not found.");
     }
 
-    taxRangeSheet.taxRates = taxRates;
+    if (single) taxRangeSheet.single = single;
+    if (marriedFilingJointly) taxRangeSheet.marriedFilingJointly = marriedFilingJointly;
+    if (marriedFilingSeparately) taxRangeSheet.marriedFilingSeparately = marriedFilingSeparately;
+    if (headOfHousehold) taxRangeSheet.headOfHousehold = headOfHousehold;
 
     await taxRangeSheet.save();
 
@@ -76,7 +71,6 @@ const editTaxRangeSheet = async (req, res, next) => {
     next(error);
   }
 };
-
 
 const getTaxRangeSheet = async (req, res, next) => {
   try {
@@ -102,5 +96,5 @@ const getTaxRangeSheet = async (req, res, next) => {
 module.exports = {
   createTaxRangeSheet,
   editTaxRangeSheet,
-  getTaxRangeSheet
+  getTaxRangeSheet,
 };
