@@ -107,6 +107,11 @@ const userSchema = new Schema(
       // enum: ["monthly", "yearly"], 
     },
 
+    isAutoSubscription: {
+      type: Boolean,
+      default: false,
+    },
+
     isAdmin: {
       type: Boolean,
       default: false,
@@ -116,6 +121,7 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
+
 
     otp: { type: String }, 
     otpExpiration: { type: Date }, 

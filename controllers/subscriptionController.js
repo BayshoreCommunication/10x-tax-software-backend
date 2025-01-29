@@ -85,6 +85,7 @@ const createSubscription = async (req, res, next) => {
     await subscription.save();
 
     user.subscription = true;
+    user.isAutoSubscription = true;
     user.currentSubscriptionPayDate = subscriptionInfo.subscriptionDate;
     user.currentSubscriptionExpiredDate = subscriptionInfo.subscriptionExpiredDate;
     user.currentSubscriptionType = subscriptionInfo.type;
@@ -176,7 +177,36 @@ const getSubscriptionByUserId = async (req, res, next) => {
 };
 
 
+// Cancle user auto subscription 
 
+const isAutoSubscriptionCancel = async (req, res, next) => {
+  try {
+
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      throw createError(404, "User not found.");
+    }
+
+    if (!user.isAutoSubscription) {
+      throw createError(404, "User already canceled auto subscription.");
+    }
+
+    user.isAutoSubscription = false;
+
+    await user.save();
+
+    return successResponse(res, {
+      statusCode: 200, 
+      message: "Auto subscription canceled successfully.",
+      payload: { isAutoSubscription: user.isAutoSubscription }, 
+    });
+  } catch (error) {
+    next(createError(500, error.message || "Failed to cancel subscription."));
+  }
+};
 
 
 
@@ -185,4 +215,5 @@ module.exports = {
   subscriptionPayment,
   createSubscription,
   getSubscriptionByUserId,
+  isAutoSubscriptionCancel
 };
