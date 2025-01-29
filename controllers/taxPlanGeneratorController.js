@@ -142,7 +142,7 @@ const sendTaxProposal = async (req, res, next) => {
 
     const {email, clientName, clientId} = req.body;
 
-    const emailData = {email: email, subject: "This is 10x Tax Proposal", text: "This si demo test for me"}
+    const emailData = {email: email, subject: "This is 10x Tax Proposal", text: "This is your tax proposal body content just for testing..."}
   
     await sendProposalEmail(emailData, req.file)
 
