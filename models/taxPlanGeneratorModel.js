@@ -30,15 +30,7 @@ const taxPlanGeneratorSchema = new Schema(
       annualGrossIncome:  { type: Number, required: true },
       retirementDeduction:  { type: Number, required: true },
       dependentsDeduction:  { type: Number, required: true },
-    },
-
-    taxProposalInfo: {
-      year2023: { type: Number, required: true },
-      year2024: { type: Number, required: true },
-      year2025: { type: Number, required: true },
-      lastYearLost: { type: Number, required: true }, 
-    },
-    
+    }
   },
   { timestamps: true }
 );

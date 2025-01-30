@@ -48,13 +48,13 @@ const createTaxPlan = async (req, res, next) => {
 
     const userId = req.user._id;
 
-    const { clientId, taxInfo, taxProposalInfo } = req.body;
+    const { clientId, taxInfo} = req.body;
 
     const newTaxPlan = new TaxPlanGenerator({
       userId,
       clientId,
       taxInfo,
-      taxProposalInfo
+
     });
 
     await newTaxPlan.save();
