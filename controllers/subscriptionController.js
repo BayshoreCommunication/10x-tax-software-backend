@@ -4,6 +4,7 @@ const createError = require("http-errors");
 const { successResponse } = require("./responseController");
 const { stripeSecretKey } = require("../secret");
 const Stripe = require("stripe");
+const alertEmailSender = require("../helper/AlertEmailSender");
 
 const stripe = new Stripe(stripeSecretKey);
 
@@ -66,6 +67,8 @@ const subscriptionPayment = async (req, res, next) => {
 const createSubscription = async (req, res, next) => {
   try {
     const userId = req.user._id;
+    const userEmail = req.user.email;
+
     const { paymentInfo, subscriptionInfo } = req.body;
 
     if (!paymentInfo || !subscriptionInfo) {
@@ -93,6 +96,11 @@ const createSubscription = async (req, res, next) => {
     user.currentSubscriptionType = subscriptionInfo.type;
 
     await user.save();
+
+
+    const emailData = {email: userEmail, subject: "This is 10x Tax Subscription Confirm Emaill", text: "Your subscription will continue without interruption. Thank you for being a valued subscriber."}
+  
+    await alertEmailSender(emailData)
 
     return successResponse(res, {
       statusCode: 201,
@@ -199,6 +207,10 @@ const isAutoSubscriptionCancel = async (req, res, next) => {
     user.isAutoSubscription = false;
 
     await user.save();
+
+    const emailData = {email: user.email, subject: "This is 10x Tax Subscription Emaill", text: "Your auto subscription is cancel"}
+  
+    await alertEmailSender(emailData)
 
     return successResponse(res, {
       statusCode: 200, 
