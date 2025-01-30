@@ -10,22 +10,23 @@ const stripe = new Stripe(stripeSecretKey);
 /**
  * Handles the creation of a payment intent for a subscription.
  */
+
 const subscriptionPayment = async (req, res, next) => {
+
   const { amount, currency, customerDetails, paymentMethodType } = req.body;
 
   try {
+    
     if (!amount || !currency) {
       throw createError(400, "Amount and currency are required.");
     }
 
-    // Ensure payment method type is provided, default to "us_bank_account"
     const paymentMethodTypes = paymentMethodType || ["us_bank_account"];
 
-    // Create the payment intent
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency,
-      payment_method_types: paymentMethodTypes, // Using provided payment method type
+      payment_method_types: paymentMethodTypes, 
       description: "Payment for subscription",
       receipt_email: customerDetails.email,
       metadata: {
@@ -60,6 +61,7 @@ const subscriptionPayment = async (req, res, next) => {
   }
 };
 
+// Create subscription
 
 const createSubscription = async (req, res, next) => {
   try {
@@ -207,8 +209,6 @@ const isAutoSubscriptionCancel = async (req, res, next) => {
     next(createError(500, error.message || "Failed to cancel subscription."));
   }
 };
-
-
 
 
 module.exports = {

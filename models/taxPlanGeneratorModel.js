@@ -30,26 +30,14 @@ const taxPlanGeneratorSchema = new Schema(
       annualGrossIncome:  { type: Number, required: true },
       retirementDeduction:  { type: Number, required: true },
       dependentsDeduction:  { type: Number, required: true },
-    }
+    },
 
-    // taxableIncome: 
-    //   {
-    //     grossIncome: { type: Number, required: true },
-    //     standardDeduction: { type: Number, required: true },
-    //     retirementContributions: { type: Number, required: true },
-    //     otherDeductions: { type: Number, required: true },
-    //     taxableIncome: { type: Number, required: true },
-    //   },
-    
-    // estimatedFederalTaxes: 
-    //   {
-    //     estimatedTaxesBeforeAdjustments: { type: Number, required: true },
-    //     federalTaxesWithheld: { type: Number, required: true },
-    //     taxCredits: { type: Number, required: true },
-    //     taxesOwed: { type: Number, required: true },
-    //     marginalTaxRate: { type: Number, required: true },
-    //     effectiveTaxRate: { type: Number, required: true },
-    //   },
+    taxProposalInfo: {
+      year2023: { type: Number, required: true },
+      year2024: { type: Number, required: true },
+      year2025: { type: Number, required: true },
+      lastYearLost: { type: Number, required: true }, 
+    },
     
   },
   { timestamps: true }
