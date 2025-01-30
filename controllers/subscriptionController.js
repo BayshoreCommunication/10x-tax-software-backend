@@ -4,7 +4,7 @@ const createError = require("http-errors");
 const { successResponse } = require("./responseController");
 const { stripeSecretKey } = require("../secret");
 const Stripe = require("stripe");
-const alertEmailSender = require("../helper/AlertEmailSender");
+const alertEmailSender = require("../helper/alertEmailSender");
 
 const stripe = new Stripe(stripeSecretKey);
 
