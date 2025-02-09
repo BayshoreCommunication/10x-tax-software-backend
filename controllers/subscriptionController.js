@@ -2,10 +2,10 @@ const Subscription = require("../models/subscriptionModel");
 const User = require("../models/userModel");
 const createError = require("http-errors");
 const { successResponse } = require("./responseController");
-const { stripeSecretKey } = require("../secret");
+const { stripeSecretKey, stripeWebhookSecret } = require("../secret");
 const Stripe = require("stripe");
 const alertEmailSender = require("../helper/alertEmailSender");
-
+const bodyParser = require('body-parser');
 const stripe = new Stripe(stripeSecretKey);
 
 /**
@@ -223,9 +223,143 @@ const isAutoSubscriptionCancel = async (req, res, next) => {
 };
 
 
+const createCheckoutSession = async (req, res, next) => {
+  const { priceId } = req.body; 
+  const userId = req.user._id;
+
+  console.log("check user id", userId);
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_types: ["card", "us_bank_account", "paypal"],
+      line_items: [
+        {
+          price: priceId,  
+          quantity: 1,
+        },
+      ],
+      success_url: 'http://localhost:3000/payment-success',  
+      cancel_url: 'http://localhost:3000/payment-failed',
+
+      // Attach metadata to the subscription
+      subscription_data: {
+        metadata: {
+          userId: userId.toString(),  // Ensure userId is a string
+        },
+      },
+    });
+
+    console.log("Stripe session created:", session.id);
+    
+    return res.status(200).json({
+      message: "Checkout session created successfully.",
+      payload: { sessionId: session.id },
+    });
+  } catch (error) {
+    next(new Error(error.message || "Failed to create checkout session."));
+  }
+};
+
+
+const webhookController = async (req, res) => {
+  let event = req.body;
+
+  if (stripeWebhookSecret) {
+    const signature = req.headers['stripe-signature'];
+
+    console.log("check value item",  signature);
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        signature,
+        stripeWebhookSecret
+      );
+    } catch (err) {
+      console.log(`⚠️  Webhook signature verification failed.`, err.message);
+      return response.sendStatus(400);
+    }
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'invoice.payment_succeeded': {
+      const subscription = event.data.object;
+      const userId = subscription?.subscription_details?.metadata?.userId;  
+
+      const subscriptionDetails = await stripe.subscriptions.retrieve(subscription?.subscription);
+  
+      // Fetch the user associated with this userId from your database
+      const user = await User.findById(userId);
+
+      if (user) {
+        // Update user subscription details
+        user.subscription = true;
+        user.isAutoSubscription = true;
+        user.currentSubscriptionPayDate = new Date(subscription.created * 1000);  
+        user.currentSubscriptionExpiredDate = new Date(subscriptionDetails.current_period_end * 1000);
+        user.currentSubscriptionType = subscriptionDetails?.plan?.interval ;  
+
+        await user.save();
+        console.log('User subscription updated successfully.');
+      } else {
+        console.log('User not found for this subscription.');
+      }
+      break;
+    }
+
+    case 'customer.subscription.deleted': {
+      const subscription = event.data.object;
+      const userId = subscription.metadata.userId;
+
+      const user = await User.findById(userId);
+      if (user) {
+        user.subscription = false;
+        user.isAutoSubscription = false;
+        user.currentSubscriptionExpiredDate =null;
+        user.currentSubscriptionPayDate=null;
+        user.currentSubscriptionType = null;
+
+        await user.save();
+        console.log('User subscription canceled successfully.');
+      } else {
+        console.log('User not found for this subscription.');
+      }
+      break;
+    }
+
+    case 'invoice.payment_failed': {
+      const subscription = event.data.object;
+      const userId = subscription.metadata.userId;
+
+      const user = await User.findById(userId);
+      if (user) {
+        user.subscription = false;
+        user.isAutoSubscription = false;
+        user.currentSubscriptionExpiredDate =null;
+        user.currentSubscriptionPayDate=null;
+        user.currentSubscriptionType = null;
+
+        await user.save();
+        console.log('User subscription marked as inactive due to payment failure.');
+      }
+      break;
+    }
+
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+  // Return a 200 response to acknowledge receipt of the event
+  res.send();
+}
+
+
 module.exports = {
   subscriptionPayment,
   createSubscription,
   getSubscriptionByUserId,
-  isAutoSubscriptionCancel
+  isAutoSubscriptionCancel,
+  createCheckoutSession,
+  webhookController
 };

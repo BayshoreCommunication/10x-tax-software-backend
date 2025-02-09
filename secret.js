@@ -19,7 +19,7 @@ const apiSecret =process.env.CLOUDINARY_API_SECRET || "";
 
 const stripeSecretKey =process.env.STRIPE_SECRET_KEY || "";
 const stripeApiKey =process.env.STRIPE_API_KEY || "";
-
+const stripeWebhookSecret=process.env.STRIPE_WEBHOOK_SECRET || "";
 
 
 module.exports = {
@@ -33,5 +33,6 @@ module.exports = {
   apiKey,
   apiSecret,
   stripeSecretKey,
-  stripeApiKey
+  stripeApiKey,
+  stripeWebhookSecret
 };

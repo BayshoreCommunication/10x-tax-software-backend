@@ -65,6 +65,7 @@ const sendVerificationEmail = async (email, otp, businessName) => {
 
 
 // Get All Users for admin account
+
 const getAllUsers = async (req, res, next) => {
   try {
     const search = req.query.search || "";
@@ -93,7 +94,7 @@ const getAllUsers = async (req, res, next) => {
     const users = await User.find(filter, options)
       .limit(limit)
       .skip((page - 1) * limit)
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 }); 
 
     const count = await User.find(filter).countDocuments();
 
