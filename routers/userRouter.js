@@ -25,14 +25,17 @@ const runValidation = require("../validator");
 const { isLoggedIn, isAdmin } = require("../middleware/auth");
 const { uploadSingle } = require("../middleware/multer");
 
-userRouter.get("/users", isLoggedIn,  getAllUsers);
+userRouter.get("/users", isLoggedIn, isAdmin,  getAllUsers);
+
 userRouter.get("/user", isLoggedIn, getUserById);
+
 userRouter.post(
   "/user/register",
-  // validateUserRegistration,
-  // runValidation,
+  validateUserRegistration,
+  runValidation,
   processRegister
 );
+
 userRouter.post("/user/verify", activateUserAccount);
 userRouter.delete("/user/:id", isLoggedIn, deleteUserById);
 userRouter.put("/user", isLoggedIn, updateUserById);

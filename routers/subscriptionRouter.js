@@ -11,7 +11,7 @@ subscriptionRouter.post("/create-payment-intent",   isLoggedIn, subscriptionPaym
 
 subscriptionRouter.post("/subscription", isLoggedIn, createSubscription);
 
-subscriptionRouter.get("/subscription/:id", getSubscriptionByUserId);
+subscriptionRouter.get("/subscription/:id", isLoggedIn, getSubscriptionByUserId);
 
 subscriptionRouter.put("/subscription-cancel",  isLoggedIn, isAutoSubscriptionCancel);
 

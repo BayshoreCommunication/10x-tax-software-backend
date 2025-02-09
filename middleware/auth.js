@@ -38,6 +38,7 @@ const isLoggedIn = async (req, res, next) => {
 };
 
 const isAdmin = async (req, res, next) => {
+  
   try {
     if (!req.user.isAdmin) {
       throw createError(
@@ -46,9 +47,11 @@ const isAdmin = async (req, res, next) => {
       );
     }
 
-    if (!user.isActive) {
+    if (!req.user.isActive) {
       throw createError(401, "Admin is not active");
     }
+
+    req.user = req.user;
 
     next();
   } catch (error) {

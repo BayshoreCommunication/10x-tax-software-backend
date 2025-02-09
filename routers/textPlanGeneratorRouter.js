@@ -6,8 +6,6 @@ const { isLoggedIn } = require("../middleware/auth");
 const { uploadFileMiddleware, handleUploadError } = require("../middleware/fileUpload");
 
 
-
-
 textPlanGeneratorRouter.post("/tax-plan", isLoggedIn, createTaxPlan);
 textPlanGeneratorRouter.get("/tax-plan/:id",isLoggedIn,  getTaxPlanByUserId);
 textPlanGeneratorRouter.put("/tax-plan/:id",isLoggedIn,  updateTaxPlan);

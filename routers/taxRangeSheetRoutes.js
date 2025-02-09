@@ -4,11 +4,11 @@ const { isLoggedIn, isAdmin } = require("../middleware/auth");
 const { createTaxRangeSheet, editTaxRangeSheet, getTaxRangeSheet } = require("../controllers/taxRangeSheetController");
 
 
-taxRangeSheetRouter.post("/tax-range-sheet",   createTaxRangeSheet);
+taxRangeSheetRouter.post("/tax-range-sheet", isLoggedIn, isAdmin, createTaxRangeSheet);
 
-taxRangeSheetRouter.put("/tax-range-sheet/:id",  editTaxRangeSheet);
+taxRangeSheetRouter.put("/tax-range-sheet/:id", isLoggedIn, isAdmin, editTaxRangeSheet);
 
-taxRangeSheetRouter.get("/tax-range-sheet",  getTaxRangeSheet);
+taxRangeSheetRouter.get("/tax-range-sheet", isLoggedIn, isAdmin, getTaxRangeSheet);
 
 
 module.exports =  {taxRangeSheetRouter};

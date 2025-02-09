@@ -1,7 +1,7 @@
 const { body } = require("express-validator");
 
 const validateUserRegistration = [
-  body("name").trim().notEmpty().withMessage("Name is required"),
+  body("businessName").trim().notEmpty().withMessage("Name is required"),
   body("email")
     .trim()
     .notEmpty()
