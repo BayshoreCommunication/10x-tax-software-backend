@@ -2,6 +2,8 @@ const createError = require("http-errors");
 const jwt = require("jsonwebtoken");
 const { jwtSecretKey } = require("../secret");
 
+// Check user is login
+
 const isLoggedIn = async (req, res, next) => {
   try {
     const token = req.cookies.accessToken || req.headers.authorization ;
@@ -36,6 +38,8 @@ const isLoggedIn = async (req, res, next) => {
     }
   }
 };
+
+// Check user is admin
 
 const isAdmin = async (req, res, next) => {
   

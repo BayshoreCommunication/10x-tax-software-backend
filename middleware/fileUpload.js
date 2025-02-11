@@ -2,25 +2,7 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 
-// Define storage configuration
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     const uploadDir = path.join(__dirname, "uploads");
-
-//     try {
-//       if (!fs.existsSync(uploadDir)) {
-//         fs.mkdirSync(uploadDir, { recursive: true });
-//       }
-//       cb(null, uploadDir);
-//     } catch (err) {
-//       console.error("Error creating upload directory:", err);
-//       cb(new Error("Failed to create upload directory"), null);
-//     }
-//   },
-//   filename: (req, file, cb) => {
-//     cb(null, `${Date.now()}-${file.originalname}`);
-//   },
-// });
+// Storage
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -43,6 +25,7 @@ const storage = multer.diskStorage({
 
 
 // File type filter
+
 const fileFilter = (req, file, cb) => {
   const allowedFileTypes = /pdf|jpg|jpeg|png/;
   const extname = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
@@ -59,7 +42,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+  limits: { fileSize: 5 * 1024 * 1024 }, 
 });
 
 // Middleware for single file upload

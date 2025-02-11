@@ -117,6 +117,103 @@ const createSubscription = async (req, res, next) => {
 
 const getSubscriptionByUserId = async (req, res, next) => {
   try {
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return next(createError(400, "User ID is required."));
+    }
+
+    // Parse query parameters
+    const search = req.query.search?.trim() || "";
+    const searchOption = req.query.searchOption?.trim() || "all"; // default to 'all'
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, parseInt(req.query.limit, 10) || 5);
+
+    // Escape special characters in the search input
+    const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const searchRegExp = new RegExp(escapeRegExp(search), "i");
+
+    // Define the base filter
+    const filter = { userId };
+
+    // Adjust filter based on search and searchOption
+    if (searchOption !== "all") {
+      if (searchOption === "month") {
+        // Check if search is a valid month format (e.g., 'January')
+        const dateRegex = new RegExp(`^${search}`, "i"); // Match month string
+        filter.$or = [
+          { subscriptionDate: dateRegex },
+          { subscriptionExpiredDate: dateRegex }
+        ];
+      } else if (searchOption === "year") {
+        // Filter based on year format (e.g., '2023')
+        const yearRegex = new RegExp(`^${search}`, "i");
+        filter.$or = [
+          { subscriptionDate: yearRegex },
+          { subscriptionExpiredDate: yearRegex }
+        ];
+      }
+    } else if (search) {
+      // If 'All' is selected and search exists, match against multiple fields
+      filter.$or = [
+        { subscriptionDate: searchRegExp },
+        { subscriptionExpiredDate: searchRegExp },
+        { type: searchRegExp },
+      ];
+    }
+
+    // Check if any matching data exists
+    const totalSubscriptions = await Subscription.countDocuments(filter);
+
+    // If no data matches the search, return an empty response
+    if (totalSubscriptions === 0) {
+      return successResponse(res, {
+        statusCode: 200,
+        message: "No subscriptions found matching the search criteria.",
+        payload: {
+          subscriptions: [],
+          pagination: {
+            totalPages: 0,
+            currentPage: 0,
+            previousPage: null,
+            nextPage: null,
+          },
+        },
+      });
+    }
+
+    // Fetch matching clients with pagination
+    const subscriptions = await Subscription.find(filter)
+      .limit(limit)
+      .skip((page - 1) * limit)
+      .sort({ updatedAt: -1 }) 
+      .exec();
+
+    const totalPages = Math.ceil(totalSubscriptions / limit);
+
+    // Respond with the filtered and paginated data
+    return successResponse(res, {
+      statusCode: 200,
+      message: "Subscriptions details successfully returned.",
+      payload: {
+        subscriptions,
+        pagination: {
+          totalPages,
+          currentPage: page,
+          previousPage: page > 1 ? page - 1 : null,
+          nextPage: page < totalPages ? page + 1 : null,
+        },
+      },
+    });
+  } catch (error) {
+    next(createError(500, error.message || "Failed to retrieve subscriptions details."));
+  }
+};
+
+
+
+const getSubscriptionByUserIdsd = async (req, res, next) => {
+  try {
     const { id: userId } = req.params;
 
     const user = await User.findById(userId);
@@ -146,10 +243,10 @@ const getSubscriptionByUserId = async (req, res, next) => {
     };
 
     // Adjust filter based on `selectFilterOption`
-    if (selectFilterOption === "Monthly") {
-      filter["subscriptionInfo.type"] = "Monthly";
-    } else if (selectFilterOption === "Yearly") {
-      filter["subscriptionInfo.type"] = "Yearly";
+    if (selectFilterOption === "Month") {
+      filter["subscriptionInfo.type"] = "Month";
+    } else if (selectFilterOption === "Year") {
+      filter["subscriptionInfo.type"] = "Year";
     }
 
     const subscriptions = await Subscription.find(filter)
@@ -242,6 +339,9 @@ const createCheckoutSession = async (req, res, next) => {
       success_url: 'https://10x-tax-software-user.vercel.app/payment-success',  
       cancel_url: 'https://10x-tax-software-user.vercel.app/payment-failed',
 
+      // success_url: 'http://localhost:3000/payment-success',  
+      // cancel_url: 'http://localhost:3000/payment-failed',
+
       // Attach metadata to the subscription
       subscription_data: {
         metadata: {
@@ -268,7 +368,6 @@ const webhookController = async (req, res) => {
   if (stripeWebhookSecret) {
     const signature = req.headers['stripe-signature'];
 
-    console.log("check value item",  signature);
     try {
       event = stripe.webhooks.constructEvent(
         req.body,
@@ -288,9 +387,14 @@ const webhookController = async (req, res) => {
       const userId = subscription?.subscription_details?.metadata?.userId;  
 
       const subscriptionDetails = await stripe.subscriptions.retrieve(subscription?.subscription);
-  
+
       // Fetch the user associated with this userId from your database
       const user = await User.findById(userId);
+
+      console.log("check data ", subscription);
+
+      
+
 
       if (user) {
         // Update user subscription details
@@ -301,6 +405,29 @@ const webhookController = async (req, res) => {
         user.currentSubscriptionType = subscriptionDetails?.plan?.interval ;  
 
         await user.save();
+      
+
+        const paymentInfo = {
+          email: subscription?.customer_email || "",
+          name: subscription?.customer_name || "none",
+          country: subscription?.customer_address?.country || "",
+          paymentId: subscription?.subscription|| "",
+        }
+  
+        const  subscriptionInfo = {
+          subscriptionDate: new Date(subscriptionDetails.created * 1000),
+          subscriptionExpiredDate: new Date(subscriptionDetails?.current_period_end * 1000),
+          type: subscriptionDetails?.plan?.interval,
+        }
+
+        const newSubscription = new Subscription({
+          userId,
+          paymentInfo : paymentInfo,
+          subscriptionInfo : subscriptionInfo
+        });
+
+        await newSubscription.save();
+
         console.log('User subscription updated successfully.');
       } else {
         console.log('User not found for this subscription.');
@@ -341,6 +468,7 @@ const webhookController = async (req, res) => {
         user.currentSubscriptionType = null;
 
         await user.save();
+
         console.log('User subscription marked as inactive due to payment failure.');
       }
       break;
