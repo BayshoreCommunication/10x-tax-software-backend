@@ -13,6 +13,7 @@ const runValidation = require("../validator");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const ProposalSend = require("../models/proposalSendModel");
+const Subscription = require("../models/subscriptionModel");
 require('dotenv').config();
 const cloudinary = require('cloudinary').v2;
 
@@ -146,38 +147,58 @@ const getUserById = async (req, res, next) => {
   }
 };
 
-
-
 // Delete User for Admin
 
 const deleteUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Delete the user with the given ID only if `isAdmin` is false
-    const user = await User.findOneAndDelete({ _id: id, isAdmin: false });
+    const user = await User.findOne({ _id: id, isAdmin: false });
 
     if (!user) {
-      // User not found or `isAdmin` is true
       return next(createError(404, "User does not exist with this ID or is an admin"));
     }
 
-    // Respond with success
+    const clientDetails = await ClientDetails.find({ userId: user._id });
+    if (clientDetails.length > 0) {
+      const clientDeletionResult = await ClientDetails.deleteMany({ userId: user._id });
+      if (clientDeletionResult.deletedCount === 0) {
+        return next(createError(500, "Failed to delete associated client details"));
+      }
+    }
+
+    const subscriptions = await Subscription.find({ userId: user._id });
+    if (subscriptions.length > 0) {
+      const subscriptionDeletionResult = await Subscription.deleteMany({ userId: user._id });
+      if (subscriptionDeletionResult.deletedCount === 0) {
+        return next(createError(500, "Failed to delete associated subscriptions"));
+      }
+    }
+
+    const proposalSends = await ProposalSend.find({ userId: user._id });
+    if (proposalSends.length > 0) {
+      const proposalDeletionResult = await ProposalSend.deleteMany({ userId: user._id });
+      if (proposalDeletionResult.deletedCount === 0) {
+        return next(createError(500, "Failed to delete associated proposal send records"));
+      }
+    }
+
+    const userDeletionResult = await User.findByIdAndDelete(id);
+    if (!userDeletionResult) {
+      return next(createError(500, "Failed to delete the user"));
+    }
+
     return successResponse(res, {
       statusCode: 200,
-      message: "User successfully deleted",
+      message: "User and all associated data successfully deleted",
     });
   } catch (error) {
-    // Handle invalid ID format
     if (error.name === "CastError") {
       return next(createError(400, "Invalid ID format"));
     }
-    // Pass other errors to the global error handler
     next(error);
   }
 };
-
-
 
 
 // Process Register

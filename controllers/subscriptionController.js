@@ -308,7 +308,6 @@ const createCheckoutSession = async (req, res, next) => {
   const { priceId } = req.body; 
   const userId = req.user._id;
 
-  console.log("check user id", userId);
 
   try {
     const session = await stripe.checkout.sessions.create({
