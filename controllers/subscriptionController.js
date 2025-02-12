@@ -117,15 +117,16 @@ const createSubscription = async (req, res, next) => {
 
 const getSubscriptionByUserId = async (req, res, next) => {
   try {
-    const userId = req.user?._id;
+    const { id: userId } = req.params;
 
-    if (!userId) {
-      return next(createError(400, "User ID is required."));
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return next(createError(404, "User not found."));
     }
 
     // Parse query parameters
     const search = req.query.search?.trim() || "";
-    const searchOption = req.query.searchOption?.trim() || "all"; // default to 'all'
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.max(1, parseInt(req.query.limit, 10) || 5);
 
@@ -136,42 +137,23 @@ const getSubscriptionByUserId = async (req, res, next) => {
     // Define the base filter
     const filter = { userId };
 
-    // Adjust filter based on search and searchOption
-    if (searchOption !== "all") {
-      if (searchOption === "month") {
-        // Check if search is a valid month format (e.g., 'January')
-        const dateRegex = new RegExp(`^${search}`, "i"); // Match month string
-        filter.$or = [
-          { subscriptionDate: dateRegex },
-          { subscriptionExpiredDate: dateRegex }
-        ];
-      } else if (searchOption === "year") {
-        // Filter based on year format (e.g., '2023')
-        const yearRegex = new RegExp(`^${search}`, "i");
-        filter.$or = [
-          { subscriptionDate: yearRegex },
-          { subscriptionExpiredDate: yearRegex }
-        ];
-      }
-    } else if (search) {
-      // If 'All' is selected and search exists, match against multiple fields
+    // If search is provided, add the $or condition
+    if (search) {
       filter.$or = [
-        { subscriptionDate: searchRegExp },
-        { subscriptionExpiredDate: searchRegExp },
-        { type: searchRegExp },
+        { "subscriptionInfo.type": searchRegExp },
       ];
     }
-
+  
     // Check if any matching data exists
-    const totalSubscriptions = await Subscription.countDocuments(filter);
+    const totalSubscription = await Subscription.countDocuments(filter);
 
     // If no data matches the search, return an empty response
-    if (totalSubscriptions === 0) {
+    if (totalSubscription === 0) {
       return successResponse(res, {
         statusCode: 200,
-        message: "No subscriptions found matching the search criteria.",
+        message: "No subscription found matching the search criteria.",
         payload: {
-          subscriptions: [],
+          clients: [],
           pagination: {
             totalPages: 0,
             currentPage: 0,
@@ -183,20 +165,21 @@ const getSubscriptionByUserId = async (req, res, next) => {
     }
 
     // Fetch matching clients with pagination
-    const subscriptions = await Subscription.find(filter)
+    const subscription = await Subscription.find(filter)
       .limit(limit)
       .skip((page - 1) * limit)
       .sort({ updatedAt: -1 }) 
       .exec();
 
-    const totalPages = Math.ceil(totalSubscriptions / limit);
+    const totalPages = Math.ceil(totalSubscription / limit);
 
+  
     // Respond with the filtered and paginated data
     return successResponse(res, {
       statusCode: 200,
-      message: "Subscriptions details successfully returned.",
+      message: "Subscription details successfully returned.",
       payload: {
-        subscriptions,
+        subscription,
         pagination: {
           totalPages,
           currentPage: page,
@@ -206,9 +189,10 @@ const getSubscriptionByUserId = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(createError(500, error.message || "Failed to retrieve subscriptions details."));
+    next(createError(500, error.message || "Failed to retrieve client details."));
   }
 };
+
 
 
 

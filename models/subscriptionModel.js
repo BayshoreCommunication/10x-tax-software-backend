@@ -1,8 +1,5 @@
 const { Schema, model } = require("mongoose");
 
-
-
-
 const subscriptionSchema = new Schema(
   {
     userId: {
