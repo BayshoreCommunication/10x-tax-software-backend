@@ -1,4 +1,6 @@
 const ClientDetails = require("../models/ClientDetailsModel");
+const ProposalSend = require("../models/proposalSendModel");
+const TaxPlanGenerator = require("../models/taxPlanGeneratorModel");
 const createError = require("http-errors");
 const { successResponse } = require("./responseController");
 
@@ -137,7 +139,7 @@ const getClientsDetailsByUserId = async (req, res, next) => {
 };
 
 
-
+//cleint detials update by user
 
 const updateClientDetails = async (req, res, next) => {
   try {
@@ -163,11 +165,28 @@ const updateClientDetails = async (req, res, next) => {
   }
 };
 
+//cleint deleted by client id
+
 const deleteClientDetails = async (req, res, next) => {
   try {
     const { id: _id } = req.params;
 
-    // Correcting the findOneAndDelete call by passing an object with _id
+    const taxPlans = await TaxPlanGenerator.find({ clientId: _id });
+    if (taxPlans.length > 0) {
+      const taxPlanDeletionResult = await TaxPlanGenerator.deleteMany({ clientId: _id });
+      if (taxPlanDeletionResult.deletedCount === 0) {
+        return next(createError(500, "Failed to delete associated tax plans"));
+      }
+    }
+
+    const proposalSends = await ProposalSend.find({ clientId: _id });
+    if (proposalSends.length > 0) {
+      const proposalDeletionResult = await ProposalSend.deleteMany({ clientId: _id });
+      if (proposalDeletionResult.deletedCount === 0) {
+        return next(createError(500, "Failed to delete associated proposal send records"));
+      }
+    }
+
     const deletedClientDetails = await ClientDetails.findOneAndDelete({ _id });
     if (!deletedClientDetails) {
       return next(createError(404, "Client details not found."));
@@ -182,6 +201,7 @@ const deleteClientDetails = async (req, res, next) => {
     next(createError(500, error.message || "Failed to delete client details."));
   }
 };
+
 
 
 module.exports = {
