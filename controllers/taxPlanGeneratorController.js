@@ -33,15 +33,13 @@ const sendTaxProposalTemplate = async (email, imageUrl, clientName) => {
   };
 
   try {
-    await sendEmailWithNodeMailer(emailData); // Ensure this function handles errors internally
+    await sendEmailWithNodeMailer(emailData); 
   } catch (error) {
     throw new Error('Failed to send verification email');
   }
 };
 
-
-
-
+// Create tax plan and proposal 
 
 const createTaxPlan = async (req, res, next) => {
   try {
@@ -54,7 +52,6 @@ const createTaxPlan = async (req, res, next) => {
       userId,
       clientId,
       taxInfo,
-
     });
 
     await newTaxPlan.save();
@@ -68,6 +65,8 @@ const createTaxPlan = async (req, res, next) => {
     next(createError(500, error.message || "Failed to create tax plan."));
   }
 };
+
+// Get tax plan and  proposal data
 
 const getTaxPlanByUserId = async (req, res, next) => {
   try {
@@ -112,6 +111,8 @@ const updateTaxPlan = async (req, res, next) => {
   }
 };
 
+// Deleted tax plan and proposal data 
+
 const deleteTaxPlan = async (req, res, next) => {
   try {
     const { id: _id } = req.params;
@@ -131,7 +132,7 @@ const deleteTaxPlan = async (req, res, next) => {
   }
 };
 
-
+// Send tax proposal
 
 const sendTaxProposal = async (req, res, next) => {
   try {
@@ -171,6 +172,8 @@ const sendTaxProposal = async (req, res, next) => {
     next(createError(500, error.message || "Failed to send tax proposal."));
   }
 };
+
+// Get send tax proposal data
 
 const getProposalSend = async (req, res, next) => {
   try {

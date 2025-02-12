@@ -20,7 +20,9 @@ const {
   emailChangeOtpVerify,
   userOverViewDetails,
 } = require("../controllers/usersController");
+
 const { validateUserRegistration, validateUserPassword, validateUserForgatPassword, validateUserResetPassword } = require("../validator/auth");
+
 const runValidation = require("../validator");
 const { isLoggedIn, isAdmin } = require("../middleware/auth");
 const { uploadSingle } = require("../middleware/multer");

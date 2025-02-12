@@ -104,7 +104,7 @@ const userSchema = new Schema(
 
     currentSubscriptionType: {
       type: String,
-      // enum: ["monthly", "yearly"], 
+      // enum: ["month", "year"], 
     },
 
     isAutoSubscription: {

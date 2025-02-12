@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { dataBaseUrl } = require('../secret');
 
+// Database connect
 
 mongoose
   .connect( dataBaseUrl)

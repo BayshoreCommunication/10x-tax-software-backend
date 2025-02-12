@@ -15,13 +15,8 @@ const bcrypt = require("bcryptjs");
 const ProposalSend = require("../models/proposalSendModel");
 const Subscription = require("../models/subscriptionModel");
 require('dotenv').config();
-const cloudinary = require('cloudinary').v2;
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// Generate otp code and expriration time  
 
 const generateOtpAndExpiration = () => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -30,6 +25,7 @@ const generateOtpAndExpiration = () => {
 };
 
 // Helper function to send verification email
+
 const sendVerificationEmail = async (email, otp, businessName) => {
   const emailData = {
     email,
@@ -58,14 +54,14 @@ const sendVerificationEmail = async (email, otp, businessName) => {
   };
 
   try {
-    await sendEmailWithNodeMailer(emailData); // Ensure this function handles errors internally
+    await sendEmailWithNodeMailer(emailData); 
   } catch (error) {
     throw new Error('Failed to send verification email');
   }
 };
 
 
-// Get All Users for admin account
+// Get all users for admin account
 
 const getAllUsers = async (req, res, next) => {
   try {
@@ -122,7 +118,7 @@ const getAllUsers = async (req, res, next) => {
 };
 
 
-// Get User by Id
+// Get user by Id
 
 const getUserById = async (req, res, next) => {
   try {
@@ -146,7 +142,7 @@ const getUserById = async (req, res, next) => {
   }
 };
 
-// Delete User for Admin
+// Delete user for admin
 
 const deleteUserById = async (req, res, next) => {
   try {
@@ -200,18 +196,16 @@ const deleteUserById = async (req, res, next) => {
 };
 
 
-// Process Register
+// Process register
 
 const processRegister = async (req, res, next) => {
   try {
     const { businessName, email, phone, password } = req.body;
 
-    // Check if the user already exists
     let user = await User.findOne({ email });
 
     if (user) {
       if (!user.isActive) {
-        // Resend OTP for inactive users
         const { otp, otpExpiration } = generateOtpAndExpiration();
         user.otp = otp;
         user.otpExpiration = otpExpiration;
@@ -234,7 +228,7 @@ const processRegister = async (req, res, next) => {
       });
     }
 
-    // Register a new user
+
     const { otp, otpExpiration } = generateOtpAndExpiration();
     const newUser = new User({
       businessName,
@@ -276,7 +270,6 @@ const activateUserAccount = async (req, res, next) => {
       return next(createError(404, "User does not exist."));
     }
 
-    // Validate OTP and its expiration
     if (user.otp !== otp) {
       return next(createError(400, "Invalid OTP."));
     }
@@ -285,7 +278,6 @@ const activateUserAccount = async (req, res, next) => {
       return next(createError(400, "OTP has expired."));
     }
 
-    // Activate user account
     user.otp = null;
     user.otpExpiration = null;
     user.isActive = true;
@@ -300,8 +292,6 @@ const activateUserAccount = async (req, res, next) => {
     next(error);
   }
 };
-
-
 
 
 // Update user by id
@@ -345,13 +335,12 @@ const updateUserById = async (req, res, next) => {
   }
 };
 
-// User Data Update 
+// Update user data 
 
 const updateUserData = async (req, res, next) => {
   try {
     const userId = req.user;
 
-    // Destructure the request body
     const {
       businessName,
       businessWebsite,
@@ -404,33 +393,26 @@ const updateUserData = async (req, res, next) => {
   }
 };
 
-
-
-
+// User password update
 
 const updateUserPassword = async (req, res, next) => {
   try {
     const { email, oldPassword, newPassword, confirmPassword } = req.body;
     const userId = req.user._id;
 
-
     const user = await User.findById(userId);
     if (!user) {
       throw createError(404, "User not found");
     }
-
 
     const comparePassword = await bcrypt.compare(oldPassword, user.password);
     if (!comparePassword) {
       throw createError(400, "Invalid old password");
     }
 
-
     if (newPassword !== confirmPassword) {
       throw createError(400, "New Password and Confirm Password do not match");
     }
-
-
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
@@ -441,7 +423,6 @@ const updateUserPassword = async (req, res, next) => {
     if (!updatedUser) {
       throw createError(400, "Failed to update password");
     }
-
 
     return successResponse(res, {
       statusCode: 200,
@@ -457,7 +438,6 @@ const updateUserPassword = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // Forget password
 
@@ -493,9 +473,6 @@ const forgetPassword = async (req, res, next) => {
 const forgetPasswordCheckOtp = async (req, res, next) => {
   try {
     const { otp, email } = req.body;
-
-
-    
 
     if (!email || !otp) {
       return next(createError(400, "Email and OTP are required."));
@@ -555,7 +532,6 @@ const newForgetPassword = async (req, res, next) => {
     next(error);
   }
 };
-
 
 
 // Reset password process
@@ -620,9 +596,6 @@ const resetPasswordOtpVerify = async (req, res, next) => {
       );
     }
 
-
-    
-
     const userId = req.user._id;
     const user = await User.findById(userId);
 
@@ -638,7 +611,6 @@ const resetPasswordOtpVerify = async (req, res, next) => {
       return next(createError(400, "OTP has expired."));
     }
     
-
     user.password =  newPassword;
     user.otp = null;
     user.otpExpiration = null;
@@ -759,7 +731,6 @@ const userOverViewDetails = async (req, res, next) => {
       ProposalSend.find({ userId }),
     ]);
 
-
     if (!user) {
       return next(createError(404, "User not found"));
     }
@@ -792,7 +763,6 @@ const userOverViewDetails = async (req, res, next) => {
     next(createError(500, error.message || "An error occurred while fetching user overview list."));
   }
 };
-
 
 module.exports = {
   getAllUsers,

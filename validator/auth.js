@@ -1,5 +1,7 @@
 const { body } = require("express-validator");
 
+// User registration validation
+
 const validateUserRegistration = [
   body("businessName").trim().notEmpty().withMessage("Name is required"),
   body("email")
@@ -22,6 +24,8 @@ const validateUserRegistration = [
     ),
 ];
 
+
+// User password validation
 
 const validateUserPassword = [
   body("oldPassword")
@@ -58,6 +62,9 @@ const validateUserPassword = [
     }),
 ];
 
+
+// User forgat password validation
+
 const validateUserForgatPassword = [
   body("email")
     .trim()
@@ -67,6 +74,7 @@ const validateUserForgatPassword = [
     .withMessage("Invalid Email Address"),
 ];
 
+// User reset password validation
 
 const validateUserResetPassword = [
   body("token")

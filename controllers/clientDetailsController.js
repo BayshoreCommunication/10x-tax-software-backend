@@ -4,7 +4,11 @@ const TaxPlanGenerator = require("../models/taxPlanGeneratorModel");
 const createError = require("http-errors");
 const { successResponse } = require("./responseController");
 
+
+// Create client details
+
 const createClientDetails = async (req, res, next) => {
+
   try {
 
     const userId = req.user?._id;
@@ -30,7 +34,6 @@ const createClientDetails = async (req, res, next) => {
     next(createError(500, error.message || "Failed to create client details."));
   }
 };
-
 
 
 // get client detials by client id
@@ -65,21 +68,18 @@ const getClientsDetailsByUserId = async (req, res, next) => {
       return next(createError(400, "User ID is required."));
     }
 
-    // Parse query parameters
     const search = req.query.search?.trim() || "";
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.max(1, parseInt(req.query.limit, 10) || 10);
 
-    // Escape special characters in the search input
     const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const searchRegExp = new RegExp(escapeRegExp(search), "i");
 
-    // Define the base filter
+
     const filter = {
-      userId, // Fetch data belonging to the current user
+      userId, 
     };
 
-    // If search is provided, add the $or condition
     if (search) {
       filter.$or = [
         { "basicInformation.fullName": searchRegExp },
@@ -90,10 +90,8 @@ const getClientsDetailsByUserId = async (req, res, next) => {
       ];
     }
 
-    // Check if any matching data exists
     const totalClients = await ClientDetails.countDocuments(filter);
 
-    // If no data matches the search, return an empty response
     if (totalClients === 0) {
       return successResponse(res, {
         statusCode: 200,
@@ -110,7 +108,6 @@ const getClientsDetailsByUserId = async (req, res, next) => {
       });
     }
 
-    // Fetch matching clients with pagination
     const clients = await ClientDetails.find(filter)
       .limit(limit)
       .skip((page - 1) * limit)
@@ -119,7 +116,6 @@ const getClientsDetailsByUserId = async (req, res, next) => {
 
     const totalPages = Math.ceil(totalClients / limit);
 
-    // Respond with the filtered and paginated data
     return successResponse(res, {
       statusCode: 200,
       message: "Client details successfully returned.",
@@ -139,7 +135,7 @@ const getClientsDetailsByUserId = async (req, res, next) => {
 };
 
 
-//cleint detials update by user
+// cleint detials update by user
 
 const updateClientDetails = async (req, res, next) => {
   try {

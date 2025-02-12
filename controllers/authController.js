@@ -10,7 +10,6 @@ const sendEmailWithNodeMailer = require("../helper/email");
 
 //Admin login for dashboard
 
-
 const userLoginAdmin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -77,7 +76,6 @@ const userLoginAdmin = async (req, res, next) => {
 </body>`,
     };
 
-    
     try {
       await sendEmailWithNodeMailer(emailData);
     } catch (emailError) {
@@ -96,13 +94,12 @@ const userLoginAdmin = async (req, res, next) => {
 };
 
 
-// user logiin
+// user login 
 
 const userLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
  
-
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -111,7 +108,6 @@ const userLogin = async (req, res, next) => {
         "User does not exist with this email, Please register first"
       );
     }
-
 
     const isPasswordMatch = await bcrypt.compare(password, user.password);
 
@@ -123,7 +119,6 @@ const userLogin = async (req, res, next) => {
     if (user.isBanned) {
       throw createError(403, "You are banned please contact with authority");
     }
-
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiration = Date.now() + 10 * 60 * 1000; 
@@ -175,6 +170,8 @@ const userLogin = async (req, res, next) => {
 };
 
 
+// User login Otp Verify 
+
 const userLoginOtpVerify = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
@@ -225,7 +222,7 @@ const userLoginOtpVerify = async (req, res, next) => {
 };
 
 
-
+// User logout 
 
 const userLogout = async (req, res, next) => {
   try {

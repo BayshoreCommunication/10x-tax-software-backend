@@ -1,3 +1,5 @@
+// Error handle response 
+
 const errorResponse = (
   res,
   { statusCode = 500, message = "Internal Server Error", details = null } = {}
@@ -13,6 +15,9 @@ const errorResponse = (
 
   return res.status(statusCode).json(response);
 };
+
+
+// Success handle response 
 
 const successResponse = (
   res,

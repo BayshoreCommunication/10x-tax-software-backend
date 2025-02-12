@@ -3,6 +3,9 @@ const createError = require("http-errors");
 const { successResponse } = require("./responseController");
 const mongoose = require("mongoose");
 
+
+// Create tax  range sheet by admin
+
 const createTaxRangeSheet = async (req, res, next) => {
   try {
     const { single, marriedFilingJointly, marriedFilingSeparately, headOfHousehold } = req.body;
@@ -38,6 +41,9 @@ const createTaxRangeSheet = async (req, res, next) => {
   }
 };
 
+
+// Update tax  range sheet by admin
+
 const editTaxRangeSheet = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -71,6 +77,8 @@ const editTaxRangeSheet = async (req, res, next) => {
     next(error);
   }
 };
+
+// Get tax  range sheet 
 
 const getTaxRangeSheet = async (req, res, next) => {
   try {

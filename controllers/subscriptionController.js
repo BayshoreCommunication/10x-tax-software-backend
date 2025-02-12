@@ -8,9 +8,7 @@ const alertEmailSender = require("../helper/alertEmailSender");
 const bodyParser = require('body-parser');
 const stripe = new Stripe(stripeSecretKey);
 
-/**
- * Handles the creation of a payment intent for a subscription.
- */
+// Old subscription payment Inten
 
 const subscriptionPayment = async (req, res, next) => {
 
@@ -41,16 +39,13 @@ const subscriptionPayment = async (req, res, next) => {
           city: customerDetails.address.city,
           country: customerDetails.address.country,
         },
-      },
-      
+      }, 
     });
-
 
     if (!paymentIntent.client_secret) {
       throw createError(500, "Failed to create payment intent: No client secret.");
     }
 
-    
     return successResponse(res, {
       statusCode: 200,
       message: "Payment intent created successfully",
@@ -62,7 +57,7 @@ const subscriptionPayment = async (req, res, next) => {
   }
 };
 
-// Create subscription
+// Old confrim subscription
 
 const createSubscription = async (req, res, next) => {
   try {
@@ -74,7 +69,6 @@ const createSubscription = async (req, res, next) => {
     if (!paymentInfo || !subscriptionInfo) {
       throw createError(400, "Payment and subscription information are required.");
     }
-
    
     const user = await User.findById(userId);
     if (!user) {
@@ -97,7 +91,6 @@ const createSubscription = async (req, res, next) => {
 
     await user.save();
 
-
     const emailData = {email: userEmail, subject: "This is 10x Tax Subscription Confirm Emaill", text: "Your subscription will continue without interruption. Thank you for being a valued subscriber."}
   
     await alertEmailSender(emailData)
@@ -112,7 +105,6 @@ const createSubscription = async (req, res, next) => {
   }
 };
 
-
 // Retrieves subscription data for a user by user ID.
 
 const getSubscriptionByUserId = async (req, res, next) => {
@@ -125,29 +117,23 @@ const getSubscriptionByUserId = async (req, res, next) => {
       return next(createError(404, "User not found."));
     }
 
-    // Parse query parameters
     const search = req.query.search?.trim() || "";
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.max(1, parseInt(req.query.limit, 10) || 5);
 
-    // Escape special characters in the search input
     const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const searchRegExp = new RegExp(escapeRegExp(search), "i");
 
-    // Define the base filter
     const filter = { userId };
 
-    // If search is provided, add the $or condition
     if (search) {
       filter.$or = [
         { "subscriptionInfo.type": searchRegExp },
       ];
     }
   
-    // Check if any matching data exists
     const totalSubscription = await Subscription.countDocuments(filter);
 
-    // If no data matches the search, return an empty response
     if (totalSubscription === 0) {
       return successResponse(res, {
         statusCode: 200,
@@ -164,7 +150,6 @@ const getSubscriptionByUserId = async (req, res, next) => {
       });
     }
 
-    // Fetch matching clients with pagination
     const subscription = await Subscription.find(filter)
       .limit(limit)
       .skip((page - 1) * limit)
@@ -173,8 +158,6 @@ const getSubscriptionByUserId = async (req, res, next) => {
 
     const totalPages = Math.ceil(totalSubscription / limit);
 
-  
-    // Respond with the filtered and paginated data
     return successResponse(res, {
       statusCode: 200,
       message: "Subscription details successfully returned.",
@@ -193,8 +176,7 @@ const getSubscriptionByUserId = async (req, res, next) => {
   }
 };
 
-
-
+//Get subscription data by user id 
 
 const getSubscriptionByUserIdsd = async (req, res, next) => {
   try {
@@ -206,7 +188,7 @@ const getSubscriptionByUserIdsd = async (req, res, next) => {
     }
 
     const search = req.query.search || "";
-    const selectFilterOption = req.query.selectFilterOption || "All"; // Default to "All"
+    const selectFilterOption = req.query.selectFilterOption || "All"; 
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.max(1, Number(req.query.limit) || 5);
 
@@ -216,7 +198,6 @@ const getSubscriptionByUserIdsd = async (req, res, next) => {
 
     const searchRegExp = new RegExp(`.*${safeSearch}.*`, "i");
 
-    // Base filter
     const filter = {
       $or: [
         { subscriptionDate: searchRegExp },
@@ -226,7 +207,6 @@ const getSubscriptionByUserIdsd = async (req, res, next) => {
       userId,
     };
 
-    // Adjust filter based on `selectFilterOption`
     if (selectFilterOption === "Month") {
       filter["subscriptionInfo.type"] = "Month";
     } else if (selectFilterOption === "Year") {
@@ -268,7 +248,7 @@ const getSubscriptionByUserIdsd = async (req, res, next) => {
 };
 
 
-// Cancle user auto subscription 
+// Old cancle user auto subscription 
 
 const isAutoSubscriptionCancel = async (req, res, next) => {
   try {
@@ -304,10 +284,11 @@ const isAutoSubscriptionCancel = async (req, res, next) => {
 };
 
 
+//  Create  checkout session for subscription
+
 const createCheckoutSession = async (req, res, next) => {
   const { priceId } = req.body; 
   const userId = req.user._id;
-
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -325,10 +306,9 @@ const createCheckoutSession = async (req, res, next) => {
       // success_url: 'http://localhost:3000/payment-success',  
       // cancel_url: 'http://localhost:3000/payment-failed',
 
-      // Attach metadata to the subscription
       subscription_data: {
         metadata: {
-          userId: userId.toString(),  // Ensure userId is a string
+          userId: userId.toString(),  
         },
       },
     });
@@ -344,6 +324,7 @@ const createCheckoutSession = async (req, res, next) => {
   }
 };
 
+// Stripe Webhook for subscriptin manage 
 
 const webhookController = async (req, res) => {
   let event = req.body;
@@ -363,7 +344,6 @@ const webhookController = async (req, res) => {
     }
   }
 
-  // Handle the event
   switch (event.type) {
     case 'invoice.payment_succeeded': {
       const subscription = event.data.object;
@@ -371,16 +351,9 @@ const webhookController = async (req, res) => {
 
       const subscriptionDetails = await stripe.subscriptions.retrieve(subscription?.subscription);
 
-      // Fetch the user associated with this userId from your database
       const user = await User.findById(userId);
 
-      console.log("check data ", subscription);
-
-      
-
-
       if (user) {
-        // Update user subscription details
         user.subscription = true;
         user.isAutoSubscription = true;
         user.currentSubscriptionPayDate = new Date(subscription.created * 1000);  
@@ -389,7 +362,6 @@ const webhookController = async (req, res) => {
 
         await user.save();
       
-
         const paymentInfo = {
           email: subscription?.customer_email || "",
           name: subscription?.customer_name || "none",
@@ -461,10 +433,8 @@ const webhookController = async (req, res) => {
       console.log(`Unhandled event type ${event.type}`);
   }
 
-  // Return a 200 response to acknowledge receipt of the event
   res.send();
 }
-
 
 module.exports = {
   subscriptionPayment,

@@ -4,6 +4,8 @@ const { createLogger, format, transports } = require('winston');
 const { combine, timestamp, colorize, simple } = format;
 
 
+// app log 
+
 const logDir = path.join(__dirname, '../logs');
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true });
