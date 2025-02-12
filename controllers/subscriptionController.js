@@ -313,7 +313,6 @@ const createCheckoutSession = async (req, res, next) => {
       },
     });
 
-    console.log("Stripe session created:", session.id);
     
     return res.status(200).json({
       message: "Checkout session created successfully.",
@@ -383,6 +382,10 @@ const webhookController = async (req, res) => {
 
         await newSubscription.save();
 
+        const emailData = {email: user.email, subject: "This is 10x Tax Subscription Confirm Emaill", text: "Your subscription will continue without interruption. Thank you for being a valued subscriber."}
+  
+        await alertEmailSender(emailData)
+
         console.log('User subscription updated successfully.');
       } else {
         console.log('User not found for this subscription.');
@@ -395,6 +398,7 @@ const webhookController = async (req, res) => {
       const userId = subscription.metadata.userId;
 
       const user = await User.findById(userId);
+      
       if (user) {
         user.subscription = false;
         user.isAutoSubscription = false;
@@ -403,6 +407,12 @@ const webhookController = async (req, res) => {
         user.currentSubscriptionType = null;
 
         await user.save();
+
+        
+        const emailData = {email: user.email, subject: "This is 10x Tax Subscription Cancel Emaill", text: "Your subscription cancel."}
+  
+        await alertEmailSender(emailData)
+
         console.log('User subscription canceled successfully.');
       } else {
         console.log('User not found for this subscription.');
