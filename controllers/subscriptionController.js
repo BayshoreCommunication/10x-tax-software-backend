@@ -252,31 +252,52 @@ const getSubscriptionByUserIdsd = async (req, res, next) => {
 
 const isAutoSubscriptionCancel = async (req, res, next) => {
   try {
-
-    const userId = req.user._id;
+    const userId = req.user?._id;
+    if (!userId) {
+      throw createError(401, "Unauthorized access.");
+    }
 
     const user = await User.findById(userId);
-
     if (!user) {
       throw createError(404, "User not found.");
     }
 
     if (!user.isAutoSubscription) {
-      throw createError(404, "User already canceled auto subscription.");
+      throw createError(400, "Auto subscription is already canceled.");
     }
 
-    user.isAutoSubscription = false;
+    const subscriptions = await Subscription.find({ userId: user._id });
 
+    if (!subscriptions.length) {
+      throw createError(404, "Subscription info not found.");
+    }
+
+    const paymentId = subscriptions[0]?.paymentInfo?.paymentId;
+
+    if (!paymentId) {
+      throw createError(404, "Payment ID not found for subscription.");
+    }
+
+    await stripe.subscriptions.update(paymentId, {
+      cancel_at_period_end: true,
+    });
+
+
+    user.isAutoSubscription = false;
     await user.save();
 
-    const emailData = {email: user.email, subject: "This is 10x Tax Subscription Emaill", text: "Your auto subscription is cancel"}
-  
-    await alertEmailSender(emailData)
+    const emailData = {
+      email: user.email,
+      subject: "10x Tax Subscription Cancellation",
+      text: "Your auto subscription has been canceled.",
+    };
+
+    await alertEmailSender(emailData);
 
     return successResponse(res, {
-      statusCode: 200, 
+      statusCode: 200,
       message: "Auto subscription canceled successfully.",
-      payload: { isAutoSubscription: user.isAutoSubscription }, 
+      payload: { isAutoSubscription: user.isAutoSubscription },
     });
   } catch (error) {
     next(createError(500, error.message || "Failed to cancel subscription."));
@@ -293,18 +314,18 @@ const createCheckoutSession = async (req, res, next) => {
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      payment_method_types: ["card", "us_bank_account", "paypal"],
+      payment_method_types: ["card", "us_bank_account"],
       line_items: [
         {
           price: priceId,  
           quantity: 1,
         },
       ],
-      success_url: 'https://10x-tax-software-user.vercel.app/payment-success',  
-      cancel_url: 'https://10x-tax-software-user.vercel.app/payment-failed',
+      // success_url: 'https://10x-tax-software-user.vercel.app/payment-success',  
+      // cancel_url: 'https://10x-tax-software-user.vercel.app/payment-failed',
 
-      // success_url: 'http://localhost:3000/payment-success',  
-      // cancel_url: 'http://localhost:3000/payment-failed',
+      success_url: 'http://localhost:3000/payment-success',  
+      cancel_url: 'http://localhost:3000/payment-failed',
 
       subscription_data: {
         metadata: {
@@ -446,11 +467,118 @@ const webhookController = async (req, res) => {
   res.send();
 }
 
+// // Testing code start from
+
+// // Create Vendor
+
+// const createVendor = async (req, res, next) => {
+//   try {
+//     const { email } = req.body;
+
+//     console.log("check email", email);
+    
+
+//     const account = await stripe.accounts.create({
+//       type: "express",
+//       country: "BD",
+//       email,
+//       capabilities: {
+//         card_payments: { requested: true }, // Required for accepting card payments
+//         transfers: { requested: true }, // Required for sending money to vendors
+//       },
+//     });
+    
+//     console.log("check this image value", account, account.id);
+    
+
+//     res.json({ accountId: account.id });
+
+//   } catch (error) {
+//     console.error("Error creating vendor:", error);
+
+//     res.status(500).json({ error: error.message });
+//   }
+// }
+
+// // Create payment instance for test  create-payment-intent
+
+// const createPaymentIntentstest =  async (req, res, next) => {
+//   try {
+//     const { amount } = req.body;
+
+//     if (!amount || amount <= 0) {
+//       return res.status(400).json({ message: "Invalid amount provided." });
+//     }
+
+//     // Calculate split (90% to boat owner, 10% to site owner)
+//     const boatOwnerAmount = Math.round(amount * 0.9);
+//     const siteOwnerAmount = Math.round(amount * 0.1);
+
+//     const session = await stripe.checkout.sessions.create({
+//       payment_method_types: ["card"],
+//       mode: "payment",
+//       line_items: [
+//         {
+//           price_data: {
+//             currency: "usd",
+//             product_data: { name: "Boat Rental" },
+//             unit_amount: amount,
+//           },
+//           quantity: 1,
+//         },
+//       ],
+//       success_url: "http://localhost:3001/success?session_id={CHECKOUT_SESSION_ID}",
+//       cancel_url: "http://localhost:3001/cancel",
+//     });
+
+//     return res.status(200).json({
+//       message: "Checkout session created successfully.",
+//       payload: { sessionId: session.id },
+//     });
+//   } catch (error) {
+//     next(new Error(error.message || "Failed to create checkout session."));
+//   }
+// }
+
+
+// // Confirm Payment 
+
+// const confirmPayment = async (req, res, next) => {
+//   let event = req.body;
+
+//   if (stripeWebhookSecret) {
+//     const signature = req.headers['stripe-signature'];
+
+//     try {
+//       event = stripe.webhooks.constructEvent(
+//         req.body,
+//         signature,
+//         stripeWebhookSecret
+//       );
+//     } catch (err) {
+//       console.log(`⚠️  Webhook signature verification failed.`, err.message);
+//       return response.sendStatus(400);
+//     }
+//   }
+
+
+//     if (event.type === "payment_intent.succeeded") {
+//       const paymentIntent = event.data.object;
+//       console.log("Payment successful:", paymentIntent.id);
+//       // Update order status in DB
+//     }
+
+//     res.send();
+// }
+
+
+
+
 module.exports = {
   subscriptionPayment,
   createSubscription,
   getSubscriptionByUserId,
   isAutoSubscriptionCancel,
   createCheckoutSession,
-  webhookController
+  webhookController,
 };

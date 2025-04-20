@@ -5,7 +5,7 @@ const { isLoggedIn } = require("../middleware/auth");
 // const { validateUserRegistration } = require("../validator/auth");
 // const runValidation = require("../validator");
 
-const { getSubscriptionByUserId, createSubscription, subscriptionPayment, isAutoSubscriptionCancel, webhookController, createCheckoutSession } = require("../controllers/subscriptionController");
+const { getSubscriptionByUserId, createSubscription, subscriptionPayment, isAutoSubscriptionCancel, webhookController, createCheckoutSession, createVendor, createPaymentIntent, confirmPayment, createPaymentIntentstest } = require("../controllers/subscriptionController");
 
 subscriptionRouter.post("/create-payment-intent",   isLoggedIn, subscriptionPayment);
 
@@ -18,6 +18,7 @@ subscriptionRouter.put("/subscription-cancel",  isLoggedIn, isAutoSubscriptionCa
 subscriptionRouter.post('/webhook',   webhookController);
 
 subscriptionRouter.post('/create-checkout-session', isLoggedIn, createCheckoutSession);
+
 
 
 module.exports = {subscriptionRouter};
