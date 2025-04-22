@@ -5,17 +5,15 @@ const { successResponse } = require("./responseController");
 const { stripeSecretKey, stripeWebhookSecret } = require("../secret");
 const Stripe = require("stripe");
 const alertEmailSender = require("../helper/alertEmailSender");
-const bodyParser = require('body-parser');
+const bodyParser = require("body-parser");
 const stripe = new Stripe(stripeSecretKey);
 
 // Old subscription payment Inten
 
 const subscriptionPayment = async (req, res, next) => {
-
   const { amount, currency, customerDetails, paymentMethodType } = req.body;
 
   try {
-    
     if (!amount || !currency) {
       throw createError(400, "Amount and currency are required.");
     }
@@ -25,7 +23,7 @@ const subscriptionPayment = async (req, res, next) => {
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency,
-      payment_method_types: paymentMethodTypes, 
+      payment_method_types: paymentMethodTypes,
       description: "Payment for subscription",
       receipt_email: customerDetails.email,
       metadata: {
@@ -39,11 +37,14 @@ const subscriptionPayment = async (req, res, next) => {
           city: customerDetails.address.city,
           country: customerDetails.address.country,
         },
-      }, 
+      },
     });
 
     if (!paymentIntent.client_secret) {
-      throw createError(500, "Failed to create payment intent: No client secret.");
+      throw createError(
+        500,
+        "Failed to create payment intent: No client secret."
+      );
     }
 
     return successResponse(res, {
@@ -67,9 +68,12 @@ const createSubscription = async (req, res, next) => {
     const { paymentInfo, subscriptionInfo } = req.body;
 
     if (!paymentInfo || !subscriptionInfo) {
-      throw createError(400, "Payment and subscription information are required.");
+      throw createError(
+        400,
+        "Payment and subscription information are required."
+      );
     }
-   
+
     const user = await User.findById(userId);
     if (!user) {
       throw createError(404, "User not found.");
@@ -86,14 +90,19 @@ const createSubscription = async (req, res, next) => {
     user.subscription = true;
     user.isAutoSubscription = true;
     user.currentSubscriptionPayDate = subscriptionInfo.subscriptionDate;
-    user.currentSubscriptionExpiredDate = subscriptionInfo.subscriptionExpiredDate;
+    user.currentSubscriptionExpiredDate =
+      subscriptionInfo.subscriptionExpiredDate;
     user.currentSubscriptionType = subscriptionInfo.type;
 
     await user.save();
 
-    const emailData = {email: userEmail, subject: "This is 10x Tax Subscription Confirm Emaill", text: "Your subscription will continue without interruption. Thank you for being a valued subscriber."}
-  
-    await alertEmailSender(emailData)
+    const emailData = {
+      email: userEmail,
+      subject: "This is 10x Tax Subscription Confirm Emaill",
+      text: "Your subscription will continue without interruption. Thank you for being a valued subscriber.",
+    };
+
+    await alertEmailSender(emailData);
 
     return successResponse(res, {
       statusCode: 201,
@@ -121,17 +130,16 @@ const getSubscriptionByUserId = async (req, res, next) => {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.max(1, parseInt(req.query.limit, 10) || 5);
 
-    const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escapeRegExp = (string) =>
+      string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const searchRegExp = new RegExp(escapeRegExp(search), "i");
 
     const filter = { userId };
 
     if (search) {
-      filter.$or = [
-        { "subscriptionInfo.type": searchRegExp },
-      ];
+      filter.$or = [{ "subscriptionInfo.type": searchRegExp }];
     }
-  
+
     const totalSubscription = await Subscription.countDocuments(filter);
 
     if (totalSubscription === 0) {
@@ -153,7 +161,7 @@ const getSubscriptionByUserId = async (req, res, next) => {
     const subscription = await Subscription.find(filter)
       .limit(limit)
       .skip((page - 1) * limit)
-      .sort({ updatedAt: -1 }) 
+      .sort({ updatedAt: -1 })
       .exec();
 
     const totalPages = Math.ceil(totalSubscription / limit);
@@ -172,11 +180,13 @@ const getSubscriptionByUserId = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(createError(500, error.message || "Failed to retrieve client details."));
+    next(
+      createError(500, error.message || "Failed to retrieve client details.")
+    );
   }
 };
 
-//Get subscription data by user id 
+//Get subscription data by user id
 
 const getSubscriptionByUserIdsd = async (req, res, next) => {
   try {
@@ -188,7 +198,7 @@ const getSubscriptionByUserIdsd = async (req, res, next) => {
     }
 
     const search = req.query.search || "";
-    const selectFilterOption = req.query.selectFilterOption || "All"; 
+    const selectFilterOption = req.query.selectFilterOption || "All";
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.max(1, Number(req.query.limit) || 5);
 
@@ -239,16 +249,12 @@ const getSubscriptionByUserIdsd = async (req, res, next) => {
       return next(createError(400, "Invalid ID format"));
     }
     next(
-      createError(
-        500,
-        error.message || "Failed to retrieve subscription data."
-      )
+      createError(500, error.message || "Failed to retrieve subscription data.")
     );
   }
 };
 
-
-// Old cancle user auto subscription 
+// Old cancle user auto subscription
 
 const isAutoSubscriptionCancel = async (req, res, next) => {
   try {
@@ -282,7 +288,6 @@ const isAutoSubscriptionCancel = async (req, res, next) => {
       cancel_at_period_end: true,
     });
 
-
     user.isAutoSubscription = false;
     await user.save();
 
@@ -304,37 +309,35 @@ const isAutoSubscriptionCancel = async (req, res, next) => {
   }
 };
 
-
 //  Create  checkout session for subscription
 
 const createCheckoutSession = async (req, res, next) => {
-  const { priceId } = req.body; 
+  const { priceId } = req.body;
   const userId = req.user._id;
 
   try {
     const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
+      mode: "subscription",
       payment_method_types: ["card", "us_bank_account"],
       line_items: [
         {
-          price: priceId,  
+          price: priceId,
           quantity: 1,
         },
       ],
-      // success_url: 'https://10x-tax-software-user.vercel.app/payment-success',  
-      // cancel_url: 'https://10x-tax-software-user.vercel.app/payment-failed',
+      success_url: 'https://10x-tax-software-user.vercel.app/payment-success',
+      cancel_url: 'https://10x-tax-software-user.vercel.app/payment-failed',
 
-      success_url: 'http://localhost:3000/payment-success',  
-      cancel_url: 'http://localhost:3000/payment-failed',
+      // success_url: "http://localhost:3000/payment-success",
+      // cancel_url: "http://localhost:3000/payment-failed",
 
       subscription_data: {
         metadata: {
-          userId: userId.toString(),  
+          userId: userId.toString(),
         },
       },
     });
 
-    
     return res.status(200).json({
       message: "Checkout session created successfully.",
       payload: { sessionId: session.id },
@@ -344,13 +347,13 @@ const createCheckoutSession = async (req, res, next) => {
   }
 };
 
-// Stripe Webhook for subscriptin manage 
+// Stripe Webhook for subscriptin manage
 
 const webhookController = async (req, res) => {
   let event = req.body;
 
   if (stripeWebhookSecret) {
-    const signature = req.headers['stripe-signature'];
+    const signature = req.headers["stripe-signature"];
 
     try {
       event = stripe.webhooks.constructEvent(
@@ -365,83 +368,96 @@ const webhookController = async (req, res) => {
   }
 
   switch (event.type) {
-    case 'invoice.payment_succeeded': {
+    case "invoice.payment_succeeded": {
       const subscription = event.data.object;
-      const userId = subscription?.subscription_details?.metadata?.userId;  
+      const userId = subscription?.subscription_details?.metadata?.userId;
 
-      const subscriptionDetails = await stripe.subscriptions.retrieve(subscription?.subscription);
+      const subscriptionDetails = await stripe.subscriptions.retrieve(
+        subscription?.subscription
+      );
 
       const user = await User.findById(userId);
 
       if (user) {
         user.subscription = true;
         user.isAutoSubscription = true;
-        user.currentSubscriptionPayDate = new Date(subscription.created * 1000);  
-        user.currentSubscriptionExpiredDate = new Date(subscriptionDetails.current_period_end * 1000);
-        user.currentSubscriptionType = subscriptionDetails?.plan?.interval ;  
+        user.currentSubscriptionPayDate = new Date(subscription.created * 1000);
+        user.currentSubscriptionExpiredDate = new Date(
+          subscriptionDetails.current_period_end * 1000
+        );
+        user.currentSubscriptionType = subscriptionDetails?.plan?.interval;
 
         await user.save();
-      
+
         const paymentInfo = {
           email: subscription?.customer_email || "",
           name: subscription?.customer_name || "none",
           country: subscription?.customer_address?.country || "",
-          paymentId: subscription?.subscription|| "",
-        }
-  
-        const  subscriptionInfo = {
+          paymentId: subscription?.subscription || "",
+        };
+
+        const subscriptionInfo = {
           subscriptionDate: new Date(subscriptionDetails.created * 1000),
-          subscriptionExpiredDate: new Date(subscriptionDetails?.current_period_end * 1000),
+          subscriptionExpiredDate: new Date(
+            subscriptionDetails?.current_period_end * 1000
+          ),
           type: subscriptionDetails?.plan?.interval,
-        }
+        };
 
         const newSubscription = new Subscription({
           userId,
-          paymentInfo : paymentInfo,
-          subscriptionInfo : subscriptionInfo
+          paymentInfo: paymentInfo,
+          subscriptionInfo: subscriptionInfo,
         });
 
         await newSubscription.save();
 
-        const emailData = {email: user.email, subject: "This is 10x Tax Subscription Confirm Emaill", text: "Your subscription will continue without interruption. Thank you for being a valued subscriber."}
-  
-        await alertEmailSender(emailData)
+        const emailData = {
+          email: user.email,
+          subject: "This is 10x Tax Subscription Confirm Emaill",
+          text: "Your subscription will continue without interruption. Thank you for being a valued subscriber.",
+        };
 
-        console.log('User subscription updated successfully.');
+        await alertEmailSender(emailData);
+
+        console.log("User subscription updated successfully.");
       } else {
-        console.log('User not found for this subscription.');
+        console.log("User not found for this subscription.");
       }
       break;
     }
 
-    case 'customer.subscription.deleted': {
+    case "customer.subscription.deleted": {
       const subscription = event.data.object;
       const userId = subscription.metadata.userId;
 
       const user = await User.findById(userId);
-      
+
       if (user) {
         user.subscription = false;
         user.isAutoSubscription = false;
-        user.currentSubscriptionExpiredDate =null;
-        user.currentSubscriptionPayDate=null;
+        user.currentSubscriptionExpiredDate = null;
+        user.currentSubscriptionPayDate = null;
         user.currentSubscriptionType = null;
 
         await user.save();
 
-        
-        const emailData = {email: user.email, subject: "This is 10x Tax Subscription Cancel Emaill", text: "Your subscription cancel."}
-  
-        await alertEmailSender(emailData)
+        const emailData = {
+          email: user.email,
+          subject: "This is 10x Tax Subscription Cancel Emaill",
+          text: "Your subscription cancel.",
+        };
 
-        console.log('User subscription canceled successfully.');
+        await alertEmailSender(emailData);
+
+        console.log("User subscription canceled successfully.");
       } else {
-        console.log('User not found for this subscription.');
+        console.log("User not found for this subscription.");
       }
       break;
     }
 
-    case 'invoice.payment_failed': {
+    case "invoice.payment_failed": {
       const subscription = event.data.object;
       const userId = subscription.metadata.userId;
 
@@ -449,13 +465,15 @@ const webhookController = async (req, res) => {
       if (user) {
         user.subscription = false;
         user.isAutoSubscription = false;
-        user.currentSubscriptionExpiredDate =null;
-        user.currentSubscriptionPayDate=null;
+        user.currentSubscriptionExpiredDate = null;
+        user.currentSubscriptionPayDate = null;
         user.currentSubscriptionType = null;
 
         await user.save();
 
-        console.log('User subscription marked as inactive due to payment failure.');
+        console.log(
+          "User subscription marked as inactive due to payment failure."
+        );
       }
       break;
     }
@@ -465,7 +483,7 @@ const webhookController = async (req, res) => {
   }
 
   res.send();
-}
+};
 
 // // Testing code start from
 
@@ -476,7 +494,6 @@ const webhookController = async (req, res) => {
 //     const { email } = req.body;
 
 //     console.log("check email", email);
-    
 
 //     const account = await stripe.accounts.create({
 //       type: "express",
@@ -487,9 +504,8 @@ const webhookController = async (req, res) => {
 //         transfers: { requested: true }, // Required for sending money to vendors
 //       },
 //     });
-    
+
 //     console.log("check this image value", account, account.id);
-    
 
 //     res.json({ accountId: account.id });
 
@@ -540,8 +556,7 @@ const webhookController = async (req, res) => {
 //   }
 // }
 
-
-// // Confirm Payment 
+// // Confirm Payment
 
 // const confirmPayment = async (req, res, next) => {
 //   let event = req.body;
@@ -561,7 +576,6 @@ const webhookController = async (req, res) => {
 //     }
 //   }
 
-
 //     if (event.type === "payment_intent.succeeded") {
 //       const paymentIntent = event.data.object;
 //       console.log("Payment successful:", paymentIntent.id);
@@ -570,9 +584,6 @@ const webhookController = async (req, res) => {
 
 //     res.send();
 // }
-
-
-
 
 module.exports = {
   subscriptionPayment,
