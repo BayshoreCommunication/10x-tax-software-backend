@@ -9,8 +9,6 @@ const { smptUser, smptPassword } = require("../secret");
 const sendProposalEmail = require("../helper/sendProposalEmail");
 const ProposalSend = require("../models/proposalSendModel");
 const sendTaxProposalTemplate = async (email, imageUrl, clientName) => {
-
-
   const emailData = {
     email,
     subject: "10x Tax Proposal",
@@ -33,25 +31,25 @@ const sendTaxProposalTemplate = async (email, imageUrl, clientName) => {
   };
 
   try {
-    await sendEmailWithNodeMailer(emailData); 
+    await sendEmailWithNodeMailer(emailData);
   } catch (error) {
-    throw new Error('Failed to send verification email');
+    throw new Error("Failed to send verification email");
   }
 };
 
-// Create tax plan and proposal 
+// Create tax plan and proposal
 
 const createTaxPlan = async (req, res, next) => {
   try {
-
     const userId = req.user._id;
 
-    const { clientId, taxInfo} = req.body;
+    const { clientId, taxInfo, taxProposalInfo } = req.body;
 
     const newTaxPlan = new TaxPlanGenerator({
       userId,
       clientId,
       taxInfo,
+      taxProposalInfo,
     });
 
     await newTaxPlan.save();
@@ -59,7 +57,7 @@ const createTaxPlan = async (req, res, next) => {
     return successResponse(res, {
       statusCode: 201,
       message: "Tax plan generated successfully",
-      payload: {newTaxPlan}
+      payload: { newTaxPlan },
     });
   } catch (error) {
     next(createError(500, error.message || "Failed to create tax plan."));
@@ -80,7 +78,7 @@ const getTaxPlanByUserId = async (req, res, next) => {
     return successResponse(res, {
       statusCode: 201,
       message: "Tax plan retrieved successfully",
-      payload: {taxPlan}
+      payload: { taxPlan },
     });
   } catch (error) {
     next(createError(500, error.message || "Failed to retrieve tax plan."));
@@ -104,20 +102,20 @@ const updateTaxPlan = async (req, res, next) => {
     return successResponse(res, {
       statusCode: 201,
       message: "Tax plan updated successfully",
-      payload: {updatedTaxPlan}
+      payload: { updatedTaxPlan },
     });
   } catch (error) {
     next(createError(500, error.message || "Failed to update tax plan."));
   }
 };
 
-// Deleted tax plan and proposal data 
+// Deleted tax plan and proposal data
 
 const deleteTaxPlan = async (req, res, next) => {
   try {
     const { id: _id } = req.params;
 
-    const deletedTaxPlan = await TaxPlanGenerator.findOneAndDelete({  _id });
+    const deletedTaxPlan = await TaxPlanGenerator.findOneAndDelete({ _id });
     if (!deletedTaxPlan) {
       return next(createError(404, "Tax plan not found."));
     }
@@ -125,7 +123,7 @@ const deleteTaxPlan = async (req, res, next) => {
     return successResponse(res, {
       statusCode: 200,
       message: "Tax plan deleted successfully",
-      payload: {}
+      payload: {},
     });
   } catch (error) {
     next(createError(500, error.message || "Failed to delete tax plan."));
@@ -142,11 +140,15 @@ const sendTaxProposal = async (req, res, next) => {
 
     const userId = req.user._id;
 
-    const {email, clientName, clientId} = req.body;
+    const { email, clientName, clientId } = req.body;
 
-    const emailData = {email: email, subject: "This is 10x Tax Proposal", text: "This is your tax proposal body content just for testing..."}
-  
-    await sendProposalEmail(emailData, req.file)
+    const emailData = {
+      email: email,
+      subject: "This is 10x Tax Proposal",
+      text: "This is your tax proposal body content just for testing...",
+    };
+
+    await sendProposalEmail(emailData, req.file);
 
     const proposalRecord = new ProposalSend({
       userId,
@@ -157,16 +159,14 @@ const sendTaxProposal = async (req, res, next) => {
 
     await proposalRecord.save();
 
-
     fs.unlink(req.file.path, (err) => {
       if (err) console.error("Error deleting file:", err);
     });
 
-
     return successResponse(res, {
       statusCode: 200,
       message: "Tax proposal send successfully",
-      payload: {}
+      payload: {},
     });
   } catch (error) {
     next(createError(500, error.message || "Failed to send tax proposal."));
@@ -177,9 +177,9 @@ const sendTaxProposal = async (req, res, next) => {
 
 const getProposalSend = async (req, res, next) => {
   try {
-    const userId = req.user._id; 
+    const userId = req.user._id;
 
-    const proposalSendList = await ProposalSend.find({ userId }); 
+    const proposalSendList = await ProposalSend.find({ userId });
 
     if (!proposalSendList || proposalSendList.length === 0) {
       throw createError(404, "No proposals found for this user.");
@@ -195,14 +195,11 @@ const getProposalSend = async (req, res, next) => {
   }
 };
 
-
 module.exports = {
   createTaxPlan,
   getTaxPlanByUserId,
   updateTaxPlan,
   deleteTaxPlan,
   sendTaxProposal,
-  getProposalSend
+  getProposalSend,
 };
-
-
