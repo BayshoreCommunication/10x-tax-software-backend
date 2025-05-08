@@ -325,11 +325,11 @@ const createCheckoutSession = async (req, res, next) => {
           quantity: 1,
         },
       ],
-      // success_url: "https://10x-tax-software-user.vercel.app/payment-success",
-      // cancel_url: "https://10x-tax-software-user.vercel.app/payment-failed",
+      success_url: "https://10x-tax-software-user.vercel.app/payment-success",
+      cancel_url: "https://10x-tax-software-user.vercel.app/payment-failed",
 
-      success_url: "http://localhost:3000/payment-success",
-      cancel_url: "http://localhost:3000/payment-failed",
+      // success_url: "http://localhost:3000/payment-success",
+      // cancel_url: "http://localhost:3000/payment-failed",
 
       subscription_data: {
         metadata: {
