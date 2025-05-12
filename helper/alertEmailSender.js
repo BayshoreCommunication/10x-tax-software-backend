@@ -18,6 +18,7 @@ const alertEmailSender = async (emailData, attachments) => {
       to: emailData.email,
       subject: emailData.subject,
       text: emailData.text,
+      html: emailData.html,
     };
 
     const info = await transporter.sendMail(emailOption);

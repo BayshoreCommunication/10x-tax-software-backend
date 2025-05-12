@@ -416,6 +416,47 @@ const webhookController = async (req, res) => {
           email: user.email,
           subject: "This is 10x Tax Subscription Confirm Emaill",
           text: "Your subscription will continue without interruption. Thank you for being a valued subscriber.",
+          html: `
+          <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 15px;">
+            <div style="max-width: 720px; margin: 30px auto; background: #ffffff; border: 1px solid #dddddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); overflow: hidden;">
+              
+              <div style="padding: 30px; text-align: left;">
+                <h1 style="font-size: 24px; color: #2e7d32; margin-bottom: 20px;">Hello ${
+                  user.fullName
+                },</h1>
+        
+                <p style="font-size: 16px; color: #555555; line-height: 1.6; margin-top: 20px;">
+                  We're excited to confirm that your <strong>10x Tax subscription</strong> has been successfully activated! 🎉
+                </p>
+        
+                <p style="font-size: 16px; color: #555555; line-height: 1.6; margin-top: 20px;">
+                  Your subscription will provide you with access to all the features and services until <strong>${
+                    subscriptionDetails?.current_period_end * 1000
+                  }</strong>.
+                </p>
+        
+                <p style="font-size: 16px; color: #555555; line-height: 1.6; margin-top: 20px;">
+                  If you have any questions, need assistance, or want to make changes to your subscription, please <a href="https://10x-tax-software-user.vercel.app/support" style="color: #007BFF; text-decoration: underline;">contact us</a>.
+                </p>
+        
+                <p style="font-size: 16px; color: #333333; margin-top: 30px;">
+                  Thank you for choosing 10x Tax! We're here to help you manage your tax services efficiently.
+                </p>
+        
+                <p style="font-size: 16px; color: #333333; margin-top: 30px;">
+                  Best regards,<br/>
+                  The 10x Tax Team
+                </p>
+              </div>
+        
+              <div style="text-align: center; font-size: 12px; color: #888888; background-color: #f0f0f0; padding: 12px;">
+                This email is intended for ${
+                  user.fullName
+                }. If you believe you've received this email in error, please <a href="https://10x-tax-software-user.vercel.app/contact-us" style="color: #007BFF; text-decoration: underline;">contact our support team</a>.
+              </div>
+            </div>
+          </body>
+        `,
         };
 
         await alertEmailSender(emailData);
@@ -446,6 +487,34 @@ const webhookController = async (req, res) => {
           email: user.email,
           subject: "This is 10x Tax Subscription Cancel Emaill",
           text: "Your subscription cancel.",
+          html: `
+          <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 15px;">
+            <div style="max-width: 720px; margin: 30px auto; background: #ffffff; border: 1px solid #dddddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); overflow: hidden;">
+              
+              <div style="padding: 30px; text-align: left;">
+                <h1 style="font-size: 24px; color: #e53935; margin-bottom: 20px;">Hi ${user.fullName},</h1>
+  
+        
+                <p style="font-size: 16px; color: #555555; line-height: 1.6; margin-top: 20px;">
+                  If this was a mistake or you'd like to reactivate your subscription, please <a href="https://10x-tax-software-user.vercel.app/subscription" style="color: #007BFF; text-decoration: underline;">click here</a> or contact our support team.
+                </p>
+        
+                <p style="font-size: 16px; color: #333333; margin-top: 30px;">
+                  We appreciate your time with us and hope to serve you again in the future.
+                </p>
+        
+                <p style="font-size: 16px; color: #333333; margin-top: 30px;">
+                  Best regards,<br/>
+                  The 10x Tax Team
+                </p>
+              </div>
+        
+              <div style="text-align: center; font-size: 12px; color: #888888; background-color: #f0f0f0; padding: 12px;">
+                This email is intended for ${user.fullName}. If you did not request to cancel your subscription, please contact support immediately.
+              </div>
+            </div>
+          </body>
+        `,
         };
 
         await alertEmailSender(emailData);
