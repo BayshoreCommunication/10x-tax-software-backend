@@ -422,7 +422,7 @@ const webhookController = async (req, res) => {
               
               <div style="padding: 30px; text-align: left;">
                 <h1 style="font-size: 24px; color: #2e7d32; margin-bottom: 20px;">Hello ${
-                  user.fullName
+                  user.businessName
                 },</h1>
         
                 <p style="font-size: 16px; color: #555555; line-height: 1.6; margin-top: 20px;">
@@ -492,7 +492,7 @@ const webhookController = async (req, res) => {
             <div style="max-width: 720px; margin: 30px auto; background: #ffffff; border: 1px solid #dddddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); overflow: hidden;">
               
               <div style="padding: 30px; text-align: left;">
-                <h1 style="font-size: 24px; color: #e53935; margin-bottom: 20px;">Hi ${user.fullName},</h1>
+                <h1 style="font-size: 24px; color: #e53935; margin-bottom: 20px;">Hi ${user.businessName},</h1>
   
         
                 <p style="font-size: 16px; color: #555555; line-height: 1.6; margin-top: 20px;">
@@ -510,7 +510,7 @@ const webhookController = async (req, res) => {
               </div>
         
               <div style="text-align: center; font-size: 12px; color: #888888; background-color: #f0f0f0; padding: 12px;">
-                This email is intended for ${user.fullName}. If you did not request to cancel your subscription, please contact support immediately.
+                This email is intended for ${user.businessName}. If you did not request to cancel your subscription, please contact support immediately.
               </div>
             </div>
           </body>
