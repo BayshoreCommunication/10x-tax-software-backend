@@ -216,7 +216,9 @@ const processRegister = async (req, res, next) => {
 
     if (user) {
       if (!user.isActive) {
-        const { otp, otpExpiration } = generateOtpAndExpiration();
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiration = Date.now() + 10 * 60 * 1000;
+
         user.otp = otp;
         user.otpExpiration = otpExpiration;
         user.businessName = businessName;
@@ -238,7 +240,9 @@ const processRegister = async (req, res, next) => {
       });
     }
 
-    const { otp, otpExpiration } = generateOtpAndExpiration();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiration = Date.now() + 10 * 60 * 1000;
+
     const newUser = new User({
       businessName,
       email,
@@ -270,7 +274,7 @@ const activateUserAccount = async (req, res, next) => {
     const { email, otp } = req.body;
 
     // Input validation
-    if (!email?.trim() || !otp?.trim()) {
+    if (!email || !otp) {
       return next(createError(400, "Email and OTP are required."));
     }
 
@@ -281,7 +285,7 @@ const activateUserAccount = async (req, res, next) => {
     }
 
     // OTP match and expiry check
-    if (String(user.otp) !== String(otp)) {
+    if (user.otp !== otp) {
       return next(createError(400, "Invalid OTP."));
     }
 
