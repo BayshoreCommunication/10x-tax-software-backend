@@ -14,13 +14,13 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const ProposalSend = require("../models/proposalSendModel");
 const Subscription = require("../models/subscriptionModel");
-require('dotenv').config();
+require("dotenv").config();
 
-// Generate otp code and expriration time  
+// Generate otp code and expriration time
 
 const generateOtpAndExpiration = () => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const otpExpiration = Date.now() + 10 * 60 * 1000; 
+  const otpExpiration = Date.now() + 10 * 60 * 1000;
   return { otp, otpExpiration };
 };
 
@@ -54,12 +54,11 @@ const sendVerificationEmail = async (email, otp, businessName) => {
   };
 
   try {
-    await sendEmailWithNodeMailer(emailData); 
+    await sendEmailWithNodeMailer(emailData);
   } catch (error) {
-    throw new Error('Failed to send verification email');
+    throw new Error("Failed to send verification email");
   }
 };
-
 
 // Get all users for admin account
 
@@ -91,7 +90,7 @@ const getAllUsers = async (req, res, next) => {
     const users = await User.find(filter, options)
       .limit(limit)
       .skip((page - 1) * limit)
-      .sort({ createdAt: -1 }); 
+      .sort({ createdAt: -1 });
 
     const count = await User.find(filter).countDocuments();
 
@@ -117,14 +116,12 @@ const getAllUsers = async (req, res, next) => {
   }
 };
 
-
 // Get user by Id
 
 const getUserById = async (req, res, next) => {
   try {
-    
     const id = req.user._id;
-    
+
     const options = { password: 0 };
 
     const user = await findWithId(User, id, options);
@@ -135,8 +132,8 @@ const getUserById = async (req, res, next) => {
       payload: { user },
     });
   } catch (error) {
-    if(error instanceof mongoose.Error.CastError){
-      throw createError(400, "Invalid Id")
+    if (error instanceof mongoose.Error.CastError) {
+      throw createError(400, "Invalid Id");
     }
     next(error);
   }
@@ -151,30 +148,44 @@ const deleteUserById = async (req, res, next) => {
     const user = await User.findOne({ _id: id, isAdmin: false });
 
     if (!user) {
-      return next(createError(404, "User does not exist with this ID or is an admin"));
+      return next(
+        createError(404, "User does not exist with this ID or is an admin")
+      );
     }
 
     const clientDetails = await ClientDetails.find({ userId: user._id });
     if (clientDetails.length > 0) {
-      const clientDeletionResult = await ClientDetails.deleteMany({ userId: user._id });
+      const clientDeletionResult = await ClientDetails.deleteMany({
+        userId: user._id,
+      });
       if (clientDeletionResult.deletedCount === 0) {
-        return next(createError(500, "Failed to delete associated client details"));
+        return next(
+          createError(500, "Failed to delete associated client details")
+        );
       }
     }
 
     const subscriptions = await Subscription.find({ userId: user._id });
     if (subscriptions.length > 0) {
-      const subscriptionDeletionResult = await Subscription.deleteMany({ userId: user._id });
+      const subscriptionDeletionResult = await Subscription.deleteMany({
+        userId: user._id,
+      });
       if (subscriptionDeletionResult.deletedCount === 0) {
-        return next(createError(500, "Failed to delete associated subscriptions"));
+        return next(
+          createError(500, "Failed to delete associated subscriptions")
+        );
       }
     }
 
     const proposalSends = await ProposalSend.find({ userId: user._id });
     if (proposalSends.length > 0) {
-      const proposalDeletionResult = await ProposalSend.deleteMany({ userId: user._id });
+      const proposalDeletionResult = await ProposalSend.deleteMany({
+        userId: user._id,
+      });
       if (proposalDeletionResult.deletedCount === 0) {
-        return next(createError(500, "Failed to delete associated proposal send records"));
+        return next(
+          createError(500, "Failed to delete associated proposal send records")
+        );
       }
     }
 
@@ -194,7 +205,6 @@ const deleteUserById = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // Process register
 
@@ -228,7 +238,6 @@ const processRegister = async (req, res, next) => {
       });
     }
 
-
     const { otp, otpExpiration } = generateOtpAndExpiration();
     const newUser = new User({
       businessName,
@@ -254,30 +263,33 @@ const processRegister = async (req, res, next) => {
   }
 };
 
-
 // Active user
 
 const activateUserAccount = async (req, res, next) => {
   try {
-    const { otp, email } = req.body;
+    const { email, otp } = req.body;
 
-    if (!email || !otp) {
+    // Input validation
+    if (!email?.trim() || !otp?.trim()) {
       return next(createError(400, "Email and OTP are required."));
     }
 
     const user = await User.findOne({ email });
+
     if (!user) {
       return next(createError(404, "User does not exist."));
     }
 
-    if (user.otp !== otp) {
+    // OTP match and expiry check
+    if (String(user.otp) !== String(otp)) {
       return next(createError(400, "Invalid OTP."));
     }
 
-    if (user.otpExpiration < Date.now()) {
+    if (user.otpExpiration && user.otpExpiration < Date.now()) {
       return next(createError(400, "OTP has expired."));
     }
 
+    // Activate user
     user.otp = null;
     user.otpExpiration = null;
     user.isActive = true;
@@ -293,7 +305,6 @@ const activateUserAccount = async (req, res, next) => {
   }
 };
 
-
 // Update user by id
 
 const updateUserById = async (req, res, next) => {
@@ -307,7 +318,17 @@ const updateUserById = async (req, res, next) => {
     let updates = {};
 
     for (let key in req.body) {
-      if (["businessName", "phone", "address", "website", "businessWebsite", "brandColor", " logoUrl"].includes(key)) {
+      if (
+        [
+          "businessName",
+          "phone",
+          "address",
+          "website",
+          "businessWebsite",
+          "brandColor",
+          " logoUrl",
+        ].includes(key)
+      ) {
         updates[key] = req.body[key];
       }
     }
@@ -328,14 +349,14 @@ const updateUserById = async (req, res, next) => {
       payload: updateUser,
     });
   } catch (error) {
-    if(error instanceof mongoose.Error.CastError){
-      throw createError(400, "Invalid Id")
+    if (error instanceof mongoose.Error.CastError) {
+      throw createError(400, "Invalid Id");
     }
     next(error);
   }
 };
 
-// Update user data 
+// Update user data
 
 const updateUserData = async (req, res, next) => {
   try {
@@ -352,7 +373,6 @@ const updateUserData = async (req, res, next) => {
 
     const updateData = {};
 
-
     if (businessName) updateData.businessName = businessName;
     if (businessWebsite) updateData.businessWebsite = businessWebsite;
     if (phone) updateData.phone = phone;
@@ -360,14 +380,13 @@ const updateUserData = async (req, res, next) => {
     if (brandColor) updateData.brandColor = brandColor;
     if (website) updateData.website = website;
 
- 
     if (req.file && req.file.path) {
       updateData.logoUrl = req.file.path;
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-      new: true, 
-      runValidators: true, 
+      new: true,
+      runValidators: true,
     });
 
     if (!updatedUser) {
@@ -430,7 +449,6 @@ const updateUserPassword = async (req, res, next) => {
       payload: { user: updatedUser },
     });
   } catch (error) {
-
     if (error instanceof mongoose.Error.CastError) {
       return next(createError(400, "Invalid user ID"));
     }
@@ -467,7 +485,6 @@ const forgetPassword = async (req, res, next) => {
   }
 };
 
-
 // Forget password check otp
 
 const forgetPasswordCheckOtp = async (req, res, next) => {
@@ -482,7 +499,6 @@ const forgetPasswordCheckOtp = async (req, res, next) => {
     if (!user) {
       return next(createError(404, "User does not exist."));
     }
-
 
     if (user.otp !== otp) {
       return next(createError(400, "Invalid OTP."));
@@ -505,7 +521,6 @@ const forgetPasswordCheckOtp = async (req, res, next) => {
   }
 };
 
-
 //set new password
 
 const newForgetPassword = async (req, res, next) => {
@@ -521,7 +536,7 @@ const newForgetPassword = async (req, res, next) => {
       return next(createError(404, "User does not exist."));
     }
 
-    user.password =  newPassword;
+    user.password = newPassword;
     await user.save();
 
     return successResponse(res, {
@@ -533,14 +548,13 @@ const newForgetPassword = async (req, res, next) => {
   }
 };
 
-
 // Reset password process
 
 const resetPasswordProcess = async (req, res, next) => {
   try {
     const { oldPassword, newPassword } = req.body;
 
-    if (!oldPassword || !newPassword ) {
+    if (!oldPassword || !newPassword) {
       return next(
         createError(400, "Old Password and New Password are required.")
       );
@@ -558,7 +572,12 @@ const resetPasswordProcess = async (req, res, next) => {
     }
 
     if (oldPassword === newPassword) {
-      return next(createError(400, "New password must be different from the old password."));
+      return next(
+        createError(
+          400,
+          "New password must be different from the old password."
+        )
+      );
     }
 
     const { otp, otpExpiration } = generateOtpAndExpiration();
@@ -588,12 +607,10 @@ const resetPasswordProcess = async (req, res, next) => {
 
 const resetPasswordOtpVerify = async (req, res, next) => {
   try {
-    const { oldPassword, newPassword,  fullOtp } = req.body;
+    const { oldPassword, newPassword, fullOtp } = req.body;
 
     if (!oldPassword || !newPassword || !fullOtp) {
-      return next(
-        createError(400, "OTP are required.")
-      );
+      return next(createError(400, "OTP are required."));
     }
 
     const userId = req.user._id;
@@ -610,8 +627,8 @@ const resetPasswordOtpVerify = async (req, res, next) => {
     if (user.otpExpiration < Date.now()) {
       return next(createError(400, "OTP has expired."));
     }
-    
-    user.password =  newPassword;
+
+    user.password = newPassword;
     user.otp = null;
     user.otpExpiration = null;
     await user.save();
@@ -631,13 +648,11 @@ const resetPasswordOtpVerify = async (req, res, next) => {
   }
 };
 
-
 // Email Change Process
 
 const emailChangeProcess = async (req, res, next) => {
   try {
-
-    const {email} = req.body
+    const { email } = req.body;
 
     const userId = req.user._id;
 
@@ -647,7 +662,9 @@ const emailChangeProcess = async (req, res, next) => {
     }
 
     if (user.email === email) {
-      return next(createError(400, "New email must be different from the old email."));
+      return next(
+        createError(400, "New email must be different from the old email.")
+      );
     }
 
     const { otp, otpExpiration } = generateOtpAndExpiration();
@@ -661,7 +678,7 @@ const emailChangeProcess = async (req, res, next) => {
     return successResponse(res, {
       statusCode: 200,
       message: "OTP sent successfully",
-      payload: { },
+      payload: {},
     });
   } catch (error) {
     if (error instanceof mongoose.Error.CastError) {
@@ -678,9 +695,7 @@ const emailChangeOtpVerify = async (req, res, next) => {
     const { email, fullOtp } = req.body;
 
     if (!email) {
-      return next(
-        createError(400, "email are required.")
-      );
+      return next(createError(400, "email are required."));
     }
 
     const userId = req.user._id;
@@ -711,17 +726,15 @@ const emailChangeOtpVerify = async (req, res, next) => {
   } catch (error) {
     if (error instanceof mongoose.Error.CastError) {
       return next(createError(400, "Invalid user ID"));
-    };
+    }
     next(error);
   }
 };
-
 
 //User dashboard overview
 
 const userOverViewDetails = async (req, res, next) => {
   try {
-
     const userId = req.user._id;
 
     const [user, clients, taxPlans, proposalSendList] = await Promise.all([
@@ -738,17 +751,17 @@ const userOverViewDetails = async (req, res, next) => {
     if (!clients) {
       throw createError(404, "No clients found for this user.");
     }
-    if (!taxPlans ) {
+    if (!taxPlans) {
       throw createError(404, "No tax plans found for this user.");
     }
-    if (!proposalSendList ) {
+    if (!proposalSendList) {
       throw createError(404, "No proposals found for this user.");
     }
 
     const overview = {
       totalClient: clients.length,
-      subscriptionPlan: user.subscription || "N/A", 
-      paymentStatus: user.currentSubscriptionType || "N/A", 
+      subscriptionPlan: user.subscription || "N/A",
+      paymentStatus: user.currentSubscriptionType || "N/A",
       subscriptionEndDate: user.currentSubscriptionExpiredDate || "N/A",
       totalPlan: taxPlans.length,
       totalProposalSend: proposalSendList.length,
@@ -757,10 +770,15 @@ const userOverViewDetails = async (req, res, next) => {
     return successResponse(res, {
       statusCode: 200,
       message: "User overview list fetched successfully.",
-      payload: { overview},
+      payload: { overview },
     });
   } catch (error) {
-    next(createError(500, error.message || "An error occurred while fetching user overview list."));
+    next(
+      createError(
+        500,
+        error.message || "An error occurred while fetching user overview list."
+      )
+    );
   }
 };
 
@@ -780,5 +798,5 @@ module.exports = {
   updateUserData,
   emailChangeProcess,
   emailChangeOtpVerify,
-  userOverViewDetails
+  userOverViewDetails,
 };

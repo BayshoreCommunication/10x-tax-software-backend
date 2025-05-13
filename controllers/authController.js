@@ -7,7 +7,6 @@ const createJsonWebToken = require("../helper/jsonWebToken");
 const { jwtSecretKey, clientUrl } = require("../secret");
 const sendEmailWithNodeMailer = require("../helper/email");
 
-
 //Admin login for dashboard
 
 const userLoginAdmin = async (req, res, next) => {
@@ -16,14 +15,12 @@ const userLoginAdmin = async (req, res, next) => {
 
     const user = await User.findOne({ email });
 
-
     if (!user) {
       throw createError(
         404,
         "User does not exist with this email, Please register first"
       );
     }
-
 
     if (!user?.isAdmin) {
       throw createError(
@@ -32,21 +29,18 @@ const userLoginAdmin = async (req, res, next) => {
       );
     }
 
-
     const isPasswordMatch = await bcrypt.compare(password, user.password);
 
     if (!isPasswordMatch) {
       throw createError(404, "Email/Password did not match");
     }
 
-  
     if (user.isBanned) {
       throw createError(403, "You are banned please contact with authority");
     }
 
-
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiration = Date.now() + 10 * 60 * 1000; 
+    const otpExpiration = Date.now() + 10 * 60 * 1000;
 
     user.otp = otp;
     user.otpExpiration = otpExpiration;
@@ -86,20 +80,19 @@ const userLoginAdmin = async (req, res, next) => {
     return successResponse(res, {
       statusCode: 201,
       message: "OTP sent to your email address. Please verify.",
-      payload: {  },
+      payload: {},
     });
   } catch (error) {
     next(error);
   }
 };
 
-
-// user login 
+// user login
 
 const userLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
- 
+
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -115,13 +108,16 @@ const userLogin = async (req, res, next) => {
       throw createError(404, "Email/Password did not match");
     }
 
-  
     if (user.isBanned) {
       throw createError(403, "You are banned please contact with authority");
     }
 
+    if (!user.isActive) {
+      throw createError(403, "You are not an active user");
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiration = Date.now() + 10 * 60 * 1000; 
+    const otpExpiration = Date.now() + 10 * 60 * 1000;
 
     user.otp = otp;
     user.otpExpiration = otpExpiration;
@@ -151,7 +147,6 @@ const userLogin = async (req, res, next) => {
 </body>`,
     };
 
-    
     try {
       await sendEmailWithNodeMailer(emailData);
     } catch (emailError) {
@@ -162,20 +157,18 @@ const userLogin = async (req, res, next) => {
     return successResponse(res, {
       statusCode: 201,
       message: "OTP sent to your email address. Please verify.",
-      payload: {  },
+      payload: {},
     });
   } catch (error) {
     next(error);
   }
 };
 
-
-// User login Otp Verify 
+// User login Otp Verify
 
 const userLoginOtpVerify = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
-
 
     if (!email || !otp) {
       throw createError(400, "Email and OTP are required.");
@@ -197,20 +190,24 @@ const userLoginOtpVerify = async (req, res, next) => {
     user.otpExpiration = null;
     await user.save();
 
-    const accessToken = await createJsonWebToken({user}, jwtSecretKey, {
+    const accessToken = await createJsonWebToken({ user }, jwtSecretKey, {
       expiresIn: "30d",
     });
 
-    const { password, otp: _, otpExpiration: __, ...userWithoutSensitiveData } = user.toObject();
+    const {
+      password,
+      otp: _,
+      otpExpiration: __,
+      ...userWithoutSensitiveData
+    } = user.toObject();
 
     res.cookie("accessToken", accessToken, {
-      maxAge: 30 * 24 * 60 * 60 * 1000, 
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       httpOnly: true,
-      // secure: true, 
+      // secure: true,
       sameSite: "strict",
     });
 
-   
     return successResponse(res, {
       statusCode: 200,
       message: "OTP verified successfully.",
@@ -221,8 +218,7 @@ const userLoginOtpVerify = async (req, res, next) => {
   }
 };
 
-
-// User logout 
+// User logout
 
 const userLogout = async (req, res, next) => {
   try {
@@ -237,11 +233,9 @@ const userLogout = async (req, res, next) => {
   }
 };
 
-
 const userTokenRefresh = async (req, res, next) => {
   try {
-    const oldRefreshToken = req.cookies.refreshToken
-
+    const oldRefreshToken = req.cookies.refreshToken;
 
     // const decoded = jwt.verify(oldRefreshToken,  jwtSecretKey)
 
@@ -259,7 +253,6 @@ const userTokenRefresh = async (req, res, next) => {
     //   // secure: true,
     //   sameSite: "none",
     // });
-
 
     // const refreshToken = await createJsonWebToken(decoded.user, jwtSecretKey, {
     //   expiresIn: "7d",
@@ -286,5 +279,5 @@ module.exports = {
   userLoginOtpVerify,
   userLogout,
   userTokenRefresh,
-  userLoginAdmin
+  userLoginAdmin,
 };
