@@ -295,6 +295,37 @@ const isAutoSubscriptionCancel = async (req, res, next) => {
       email: user.email,
       subject: "10x Tax Subscription Cancellation",
       text: "Your auto subscription has been canceled.",
+      html: `
+         <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 15px;">
+          <div style="max-width: 720px; margin: 30px auto; background: #ffffff; border: 1px solid #dddddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); overflow: hidden;">
+            
+            <div style="padding: 30px; text-align: left;">
+              <h1 style="font-size: 24px; color: #e53935; margin-bottom: 20px;">Hi ${user.businessName},</h1>
+
+              <p style="font-size: 16px; color: #555555; line-height: 1.6;">
+                We wanted to let you know that your auto-subscription has been successfully cancelled.
+              </p>
+
+              <p style="font-size: 16px; color: #555555; line-height: 1.6; margin-top: 20px;">
+                If this was a mistake or you’d like to reactivate your subscription, please <a href="https://10x-tax-software-user.vercel.app/subscription" style="color: #007BFF; text-decoration: underline;">click here</a> or contact our support team.
+              </p>
+
+              <p style="font-size: 16px; color: #333333; margin-top: 30px;">
+                We appreciate your time with us and hope to serve you again in the future.
+              </p>
+
+              <p style="font-size: 16px; color: #333333; margin-top: 30px;">
+                Best regards,<br/>
+                The 10x Tax Team
+              </p>
+            </div>
+
+            <div style="text-align: center; font-size: 12px; color: #888888; background-color: #f0f0f0; padding: 12px;">
+              This email is intended for ${user.businessName}. If you did not request to cancel your subscription, please contact support immediately.
+            </div>
+          </div>
+        </body>
+        `,
     };
 
     await alertEmailSender(emailData);
