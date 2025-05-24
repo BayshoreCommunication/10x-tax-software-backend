@@ -22,7 +22,7 @@ const clientDetailsSchema = new Schema(
         dateOfBirth: Date,
       },
     },
-    fillingStatus: { type: String },
+    fillingStatus: { type: String, default: "Single" },
     strategy: {
       homeOffice: String,
       depreciation: String,

@@ -16,6 +16,30 @@ const ProposalSend = require("../models/proposalSendModel");
 const Subscription = require("../models/subscriptionModel");
 require("dotenv").config();
 
+const OpenAI = require("openai");
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const aichatbot = async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    const chatCompletion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo", // or "gpt-3.5-turbo"
+      messages: [{ role: "user", content: message }],
+    });
+
+    console.log("check value item", chatCompletion.choices[0].message.content);
+
+    res.json({ reply: chatCompletion.choices[0].message.content });
+  } catch (error) {
+    console.error("OpenAI Error:", error);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+};
+
 // Generate otp code and expriration time
 
 const generateOtpAndExpiration = () => {
@@ -786,6 +810,32 @@ const userOverViewDetails = async (req, res, next) => {
   }
 };
 
+const ai_chat_bot = async (req, res) => {
+  const { message } = req.body;
+
+  console.log("check data vlaue item", message);
+
+  try {
+    const response = await openai.createChatCompletion({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a helpful legal assistant for Carter Injury Law. Respond clearly and professionally, focusing on car accidents, insurance claims, and legal consultations.",
+        },
+        { role: "user", content: message },
+      ],
+    });
+
+    const reply = response.data.choices[0].message.content;
+    res.json({ reply });
+  } catch (error) {
+    console.error("OpenAI Error:", error);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -803,4 +853,5 @@ module.exports = {
   emailChangeProcess,
   emailChangeOtpVerify,
   userOverViewDetails,
+  aichatbot,
 };

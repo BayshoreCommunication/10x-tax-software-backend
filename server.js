@@ -20,7 +20,6 @@
 
 // require("./config/db");
 
-
 // // const limiter = rateLimit({
 // //   windowMs: 15 * 60 * 1000,
 // //   limit: 100,
@@ -38,7 +37,6 @@
 // app.use(morgan("dev"));
 // app.use(bodyParser.json());
 // app.use(bodyParser.urlencoded({ extended: true }));
-
 
 // app.use("/api/seed", seedRouter);
 
@@ -75,11 +73,9 @@
 //   res.status(200).send('Received');
 // });
 
-
 // app.get("/", (req, res) => {
 //   return res.status(201).json({success: true, message:"welcome to the server"});
 // });
-
 
 // //client error handling
 
@@ -113,7 +109,6 @@ const textPlanGeneratorRouter = require("./routers/textPlanGeneratorRouter");
 const { stripeWebhookSecret, stripeSecretKey } = require("./secret");
 const Stripe = require("stripe");
 
-
 const stripe = Stripe(stripeSecretKey);
 
 require("./config/db");
@@ -125,7 +120,6 @@ app.use(cookieParser());
 app.use(cors());
 app.use(xssClean());
 app.use(morgan("dev"));
-
 
 app.use("/api/webhook", express.raw({ type: "application/json" }));
 
@@ -139,12 +133,12 @@ app.use("/api", taxRangeSheetRouter);
 app.use("/api", clientDetialsRouter);
 app.use("/api", textPlanGeneratorRouter);
 
-
 // Basic route for testing
 app.get("/", (req, res) => {
-  return res.status(201).json({ success: true, message: "Welcome to the server" });
+  return res
+    .status(201)
+    .json({ success: true, message: "Welcome to the server" });
 });
-
 
 // Client error handling for undefined routes
 app.use((req, res, next) => {
