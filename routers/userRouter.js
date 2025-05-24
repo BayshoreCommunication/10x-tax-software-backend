@@ -79,6 +79,4 @@ userRouter.put("/user/email-change-verify", isLoggedIn, emailChangeOtpVerify);
 
 userRouter.get("/user-overview", isLoggedIn, userOverViewDetails);
 
-userRouter.post("/ai_chat_bot", aichatbot);
-
 module.exports = { userRouter };
